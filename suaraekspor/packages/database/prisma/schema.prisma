@@ -1,0 +1,119 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String        @id @default(cuid())
+  phone         String        @unique
+  role          UserRole      @default(seller)
+  name          String?
+  province      String?
+  localLanguage String?       @default("id")
+  businessName  String?
+  address       String?
+  isVerified    Boolean       @default(false)
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  products      Product[]
+  conversations Conversation[] @relation("SellerConversations")
+  buyerConvs    Conversation[] @relation("BuyerConversations")
+  otpTokens     OtpToken[]
+}
+
+enum UserRole {
+  seller
+  buyer
+  admin
+}
+
+model OtpToken {
+  id        String   @id @default(cuid())
+  userId    String
+  token     String
+  expiresAt DateTime
+  used      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id])
+}
+
+model Product {
+  id                   String         @id @default(cuid())
+  sellerId             String
+  status               ProductStatus  @default(processing)
+  originalAudioUrl     String?
+  originalTranscript   String?
+  detectedLanguage     String?
+  photoUrls            String[]
+  visionAnalysis       Json?
+  recommendedPriceUsd  Float?
+  priceRangeMin        Float?
+  priceRangeMax        Float?
+  targetMarkets        String[]
+  category             String?
+  exportReadinessScore Int?
+  aiPipelineStage      String?        @default("pending")
+  createdAt            DateTime       @default(now())
+  updatedAt            DateTime       @updatedAt
+
+  seller               User           @relation(fields: [sellerId], references: [id])
+  listings             ProductListing[]
+  conversations        Conversation[]
+}
+
+enum ProductStatus {
+  processing
+  active
+  inactive
+}
+
+model ProductListing {
+  id           String  @id @default(cuid())
+  productId    String
+  languageCode String
+  languageName String
+  title        String
+  description  String  @db.Text
+  keywords     String[]
+
+  product      Product @relation(fields: [productId], references: [id])
+
+  @@unique([productId, languageCode])
+}
+
+model Conversation {
+  id          String    @id @default(cuid())
+  productId   String
+  sellerId    String
+  buyerId     String?
+  buyerName   String?
+  buyerLang   String    @default("en")
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  product     Product   @relation(fields: [productId], references: [id])
+  seller      User      @relation("SellerConversations", fields: [sellerId], references: [id])
+  buyer       User?     @relation("BuyerConversations", fields: [buyerId], references: [id])
+  messages    Message[]
+}
+
+model Message {
+  id              String       @id @default(cuid())
+  conversationId  String
+  senderRole      String
+  originalText    String       @db.Text
+  originalLang    String
+  translatedText  String?      @db.Text
+  aiGenerated     Boolean      @default(false)
+  summaryForSeller String?     @db.Text
+  summaryAudioUrl  String?
+  createdAt       DateTime     @default(now())
+
+  conversation    Conversation @relation(fields: [conversationId], references: [id])
+}

@@ -1,0 +1,46 @@
+{
+  "name": "suaraekspor",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "concurrently \"npm run dev:api\" \"npm run dev:web\"",
+    "dev:api": "npm run dev --workspace=apps/api",
+    "dev:web": "npm run dev --workspace=apps/web",
+    "build": "npm run build --workspaces",
+    "db:generate": "npm run generate --workspace=packages/database",
+    "db:push": "npm run push --workspace=packages/database",
+    "db:seed": "npm run seed --workspace=packages/database",
+    "db:studio": "npm run studio --workspace=packages/database"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2",
+    "typescript": "^5.3.3"
+  },
+  "dependencies": {
+    "@prisma/client": "^7.5.0",
+    "axios": "^1.13.6",
+    "bcryptjs": "^3.0.3",
+    "cloudinary": "^2.9.0",
+    "cors": "^2.8.6",
+    "dotenv": "^17.3.1",
+    "express": "^5.2.1",
+    "form-data": "^4.0.5",
+    "helmet": "^8.1.0",
+    "jsonwebtoken": "^9.0.3",
+    "morgan": "^1.10.1",
+    "multer": "^2.1.1",
+    "node-fetch": "^3.3.2",
+    "openai": "^6.31.0",
+    "prisma": "^7.5.0",
+    "zod": "^3.25.76"
+  },
+  "main": "index.js",
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": ""
+}

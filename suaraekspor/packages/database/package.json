@@ -1,0 +1,21 @@
+{
+  "name": "@suaraekspor/database",
+  "version": "1.0.0",
+  "main": "./src/index.ts",
+  "scripts": {
+    "generate": "prisma generate",
+    "push": "prisma db push",
+    "migrate": "prisma migrate dev",
+    "studio": "prisma studio",
+    "seed": "ts-node src/seed.ts"
+  },
+  "dependencies": {
+    "@prisma/client": "^5.7.1"
+  },
+  "devDependencies": {
+    "@types/node": "^25.5.0",
+    "prisma": "^5.7.1",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.3.3"
+  }
+}
