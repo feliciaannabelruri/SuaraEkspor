@@ -30,7 +30,7 @@ export default function MarketplacePage() {
 
       <div className="px-4 pt-4 pb-6 grid grid-cols-2 gap-3">
         {dummyProducts.map((p) => (
-          <Link key={p.id} href={`/product/${p.id}`}
+          <Link key={p.id} href={`/marketplace/${p.id}`}
             className="bg-white rounded-xl overflow-hidden border border-gray-100 shadow-sm">
             <div className="w-full h-36 bg-gradient-to-br from-green-100 to-green-200 flex items-center justify-center">
               <span className="text-4xl">🏺</span>
