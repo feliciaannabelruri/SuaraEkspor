@@ -1,7 +1,11 @@
 'use client';
 import { useState } from 'react';
 import Link from 'next/link';
-import { Plus, Package, MessageSquare, Check, X, Edit3, Wifi, WifiOff, ChevronRight, Send, Globe } from 'lucide-react';
+import { usePathname } from 'next/navigation';
+import { Globe } from 'lucide-react';
+import { useMiddleman } from "../context/middleman-context";
+import Sidebar from '../../components/layout/Sidebar';
+import MobileProfileMenu from '../../components/layout/MobileProfileMenu';
 
 type Message = {
   id: string;
@@ -63,6 +67,8 @@ const dummyMessages: Message[] = [
 ];
 
 export default function WhatsAppPage() {
+  const pathname = usePathname();
+  const { isMiddleman, activeUMKM, handleToggleMiddleman } = useMiddleman();
   const [isConnected, setIsConnected] = useState(true);
   const [messages, setMessages] = useState(dummyMessages);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -98,206 +104,253 @@ export default function WhatsAppPage() {
   const pendingCount = messages.filter(m => m.status === 'pending').length;
 
   return (
-    <div className="min-h-screen bg-[#F7F7F5] pb-24">
+    <div className="flex min-h-screen bg-[#FDF0E8] text-[#1c1b1b] font-body-md overflow-x-hidden">
+      {/* DESKTOP SIDEBAR */}
+      <Sidebar />
 
-      {/* HEADER */}
-      <div className="bg-[#0F4A33] px-5 py-5">
-        <p className="text-[#7EE8BC] text-xs mb-1">SuaraEkspor</p>
-        <h1 className="text-white text-xl font-bold">WhatsApp Integration</h1>
-        <p className="text-[#A8D5C2] text-xs mt-0.5">Kelola pesan buyer dari semua channel</p>
-      </div>
-
-      {/* STATUS KONEKSI WA */}
-      <div className="px-5 pt-5">
-        <div className={`rounded-xl p-4 flex items-center justify-between ${isConnected ? 'bg-green-50 border border-green-200' : 'bg-red-50 border border-red-200'}`}>
-          <div className="flex items-center gap-3">
-            <div className={`w-10 h-10 rounded-full flex items-center justify-center ${isConnected ? 'bg-green-100' : 'bg-red-100'}`}>
-              {isConnected ? <Wifi size={20} className="text-green-600" /> : <WifiOff size={20} className="text-red-500" />}
+      {/* MAIN CONTENT */}
+      <main className="w-full md:w-[calc(100%-14rem)] md:ml-56 min-h-screen bg-[#FDF0E8] flex flex-col relative pb-24 md:pb-10">
+        {/* Top Navbar */}
+        <header className="bg-white border-b border-gray-200 h-16 flex items-center justify-between px-4 md:px-8 sticky top-0 z-30">
+          <div>
+            <h1 className="text-sm font-bold text-gray-800">WhatsApp</h1>
+            <p className="text-xs text-gray-500">Sinkronisasi</p>
+          </div>
+          <div className="flex items-center gap-4">
+            {/* STATUS KONEKSI WA */}
+            <div className="bg-white border border-gray-200 rounded-md py-1.5 px-2.5 sm:px-3 flex items-center gap-2 sm:gap-4 shadow-sm">
+              <div className="flex items-center gap-1.5 sm:gap-2">
+                <div className="relative inline-flex items-center cursor-pointer" onClick={() => setIsConnected(!isConnected)}>
+                  <input type="checkbox" className="sr-only peer" checked={isConnected} readOnly />
+                  <div className="w-8 h-4 bg-gray-200 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-[#0F4A33]"></div>
+                </div>
+                <span className="text-[9px] sm:text-[10px] font-bold text-gray-700 uppercase tracking-wider">{isConnected ? 'Connected' : 'Offline'}</span>
+              </div>
+              <div className="hidden sm:block h-4 w-px bg-gray-200"></div>
+              <div className="hidden sm:flex items-center gap-1.5">
+                <span className={`w-1.5 h-1.5 rounded-full ${isConnected ? 'bg-green-500 animate-pulse' : 'bg-red-400'}`}></span>
+                <span className="text-[10px] text-gray-500 font-medium">Terakhir: 2 mnt lalu</span>
+              </div>
             </div>
+            <MobileProfileMenu />
+          </div>
+        </header>
+
+        <div className="px-4 md:px-8 pt-4 md:pt-8 pb-20 md:pb-12 max-w-[1440px] mx-auto w-full flex-1 space-y-6">
+          
+          {/* HEADER ROW */}
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
             <div>
-              <p className={`font-semibold text-sm ${isConnected ? 'text-green-800' : 'text-red-700'}`}>
-                {isConnected ? 'WhatsApp Terhubung' : 'WhatsApp Belum Terhubung'}
-              </p>
-              <p className={`text-xs ${isConnected ? 'text-green-600' : 'text-red-500'}`}>
-                {isConnected ? '+62 812-3456-7890 · Aktif' : 'Hubungkan nomor WA Anda'}
-              </p>
+              <div className="text-[10px] text-gray-500 font-medium mb-1">Admin : WhatsApp</div>
+              <h1 className="text-xl md:text-2xl font-bold text-gray-800 mb-1">WhatsApp Integration</h1>
+              <p className="text-xs md:text-sm text-gray-500">Sinkronisasi pesan global otomatis dengan teknologi AI.</p>
             </div>
           </div>
-          <button
-            onClick={() => setIsConnected(!isConnected)}
-            className={`text-xs px-3 py-1.5 rounded-full font-medium ${isConnected ? 'bg-red-100 text-red-600' : 'bg-[#0F4A33] text-white'}`}
-          >
-            {isConnected ? 'Putuskan' : 'Hubungkan'}
-          </button>
-        </div>
 
-        {/* STATS */}
-        <div className="flex gap-3 mt-4">
-          <div className="flex-1 bg-white rounded-xl p-3 border border-gray-200 text-center">
-            <p className="text-xl font-bold text-[#0F4A33]">{pendingCount}</p>
-            <p className="text-xs text-gray-500 mt-0.5">Menunggu</p>
-          </div>
-          <div className="flex-1 bg-white rounded-xl p-3 border border-gray-200 text-center">
-            <p className="text-xl font-bold text-gray-800">{messages.filter(m => m.channel === 'wa').length}</p>
-            <p className="text-xs text-gray-500 mt-0.5">Pesan WA</p>
-          </div>
-          <div className="flex-1 bg-white rounded-xl p-3 border border-gray-200 text-center">
-            <p className="text-xl font-bold text-gray-800">{messages.filter(m => m.status === 'approved').length}</p>
-            <p className="text-xs text-gray-500 mt-0.5">Disetujui</p>
-          </div>
-        </div>
-
-        {/* FILTER */}
-        <div className="flex gap-2 mt-4 overflow-x-auto pb-1">
-          {(['all', 'pending', 'wa', 'inapp'] as const).map(f => (
-            <button
-              key={f}
-              onClick={() => setActiveFilter(f)}
-              className={`flex-shrink-0 text-xs px-3 py-1.5 rounded-full border font-medium transition-all ${
-                activeFilter === f
-                  ? 'bg-[#0F4A33] text-white border-[#0F4A33]'
-                  : 'bg-white text-gray-500 border-gray-200'
-              }`}
-            >
-              {f === 'all' ? 'Semua' : f === 'pending' ? `Pending (${pendingCount})` : f === 'wa' ? 'WhatsApp' : 'In-App'}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* INBOX */}
-      <div className="px-5 mt-4 flex flex-col gap-4">
-        {filtered.length === 0 && (
-          <div className="text-center py-12 text-gray-400">
-            <MessageSquare size={32} className="mx-auto mb-2 opacity-30" />
-            <p className="text-sm">Tidak ada pesan</p>
-          </div>
-        )}
-
-        {filtered.map((msg) => (
-          <div key={msg.id} className={`bg-white rounded-xl border overflow-hidden ${
-            msg.status === 'approved' ? 'border-green-200' :
-            msg.status === 'rejected' ? 'border-gray-200 opacity-60' :
-            'border-gray-200'
-          }`}>
-
-            {/* MESSAGE HEADER */}
-            <div className="px-4 pt-4 pb-3 flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 bg-[#7EE8BC] rounded-full flex items-center justify-center flex-shrink-0">
-                  <span className="text-[#0F4A33] font-bold text-xs">{msg.buyer.charAt(0)}</span>
-                </div>
-                <div>
-                  <div className="flex items-center gap-1.5">
-                    <p className="font-semibold text-gray-900 text-sm">{msg.buyer}</p>
-                    <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${
-                      msg.channel === 'wa'
-                        ? 'bg-green-100 text-green-700'
-                        : 'bg-blue-100 text-blue-700'
-                    }`}>
-                      {msg.channel === 'wa' ? 'WA' : 'In-App'}
-                    </span>
-                  </div>
-                  <p className="text-gray-400 text-xs">{msg.buyerCountry} · {msg.time}</p>
-                </div>
+          {/* STATS */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="bg-white border border-[#E5D5CB] p-4 rounded-xl flex items-center gap-3 hover:border-[#0F4A33] transition-all shadow-sm">
+              <div className="w-10 h-10 rounded-lg bg-[#c5eadf] flex items-center justify-center text-[#0F4A33]">
+                <span className="material-symbols-outlined text-[20px]">pending_actions</span>
               </div>
-              <span className={`text-[10px] px-2 py-1 rounded-full font-medium ${
-                msg.status === 'approved' ? 'bg-green-100 text-green-700' :
-                msg.status === 'rejected' ? 'bg-gray-100 text-gray-500' :
-                'bg-amber-100 text-amber-700'
-              }`}>
-                {msg.status === 'approved' ? '✓ Terkirim' : msg.status === 'rejected' ? 'Ditolak' : 'Pending'}
-              </span>
+              <div>
+                <p className="text-2xl font-bold leading-none text-gray-800">{pendingCount}</p>
+                <p className="text-gray-500 text-[10px] font-bold uppercase tracking-wider mt-1">Menunggu</p>
+              </div>
             </div>
-
-            {/* PESAN ASLI */}
-            <div className="px-4 pb-3 border-b border-gray-100">
-              <p className="text-xs text-gray-400 mb-1 flex items-center gap-1">
-                <Globe size={10} /> Pesan asli ({msg.buyerCountry})
-              </p>
-              <p className="text-sm text-gray-700 italic">"{msg.originalText}"</p>
+            <div className="bg-white border border-[#E5D5CB] p-4 rounded-xl flex items-center gap-3 hover:border-[#0F4A33] transition-all shadow-sm">
+              <div className="w-10 h-10 rounded-lg bg-[#ffdbca] flex items-center justify-center text-[#9c4400]">
+                <span className="material-symbols-outlined text-[20px]" style={{ fontVariationSettings: "'FILL' 1" }}>chat</span>
+              </div>
+              <div>
+                <p className="text-2xl font-bold leading-none text-gray-800">{messages.filter(m => m.channel === 'wa').length}</p>
+                <p className="text-gray-500 text-[10px] font-bold uppercase tracking-wider mt-1">Pesan WA</p>
+              </div>
             </div>
-
-            {/* TERJEMAHAN */}
-            <div className="px-4 py-3 bg-blue-50 border-b border-gray-100">
-              <p className="text-xs text-blue-500 mb-1">🔤 Terjemahan AI</p>
-              <p className="text-sm text-gray-800">{msg.translatedText}</p>
+            <div className="bg-white border border-[#E5D5CB] p-4 rounded-xl flex items-center gap-3 hover:border-[#0F4A33] transition-all shadow-sm">
+              <div className="w-10 h-10 rounded-lg bg-[#b0f2b7] flex items-center justify-center text-[#0F4A33]">
+                <span className="material-symbols-outlined text-[20px]">verified_user</span>
+              </div>
+              <div>
+                <p className="text-2xl font-bold leading-none text-gray-800">{messages.filter(m => m.status === 'approved').length}</p>
+                <p className="text-gray-500 text-[10px] font-bold uppercase tracking-wider mt-1">Disetujui</p>
+              </div>
             </div>
+          </div>
 
-            {/* AI REPLY */}
-            <div className="px-4 py-3 bg-[#f0faf5] border-b border-gray-100">
-              <p className="text-xs text-[#0F4A33] mb-1.5 flex items-center gap-1">
-                <span>✨</span> Balasan AI (dalam bahasa buyer)
-              </p>
-              {editingId === msg.id ? (
-                <textarea
-                  value={editText}
-                  onChange={e => setEditText(e.target.value)}
-                  className="w-full text-sm text-gray-800 bg-white border border-[#0F4A33]/30 rounded-lg p-2.5 resize-none focus:outline-none focus:border-[#0F4A33]"
-                  rows={3}
-                />
-              ) : (
-                <p className="text-sm text-gray-800">{msg.aiReply}</p>
+          {/* FILTER TABS */}
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4 mt-2">
+            <div className="flex gap-2 overflow-x-auto pb-2 md:pb-0 scrollbar-hide flex-1">
+              {(['all', 'pending', 'wa', 'inapp'] as const).map(f => (
+                <button
+                  key={f}
+                  onClick={() => setActiveFilter(f)}
+                  className={`px-4 py-2 rounded-full font-bold text-xs md:text-sm whitespace-nowrap border transition-colors ${
+                    activeFilter === f
+                      ? 'bg-[#0F4A33] text-white border-[#0F4A33]'
+                      : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'
+                  }`}
+                >
+                  {f === 'all' ? 'Semua' : f === 'pending' ? 'Pending' : f === 'wa' ? 'WhatsApp' : 'In-App'}
+                </button>
+              ))}
+            </div>
+            
+            {/* Search Bar */}
+            <div className="relative w-full md:w-64 flex-shrink-0">
+              <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-[20px]">search</span>
+              <input 
+                type="text" 
+                placeholder="Cari percakapan..." 
+                className="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-200 rounded-full text-sm focus:outline-none focus:border-[#0F4A33] text-gray-700 placeholder-gray-400"
+              />
+            </div>
+          </div>
+
+          {/* MAIN CONTAINER */}
+          <div className="bg-[#FDF0E8] overflow-hidden flex flex-col">
+
+            {/* INBOX */}
+            <div className="p-4 md:p-6 bg-[#FDF0E8] flex flex-col gap-4">
+              {filtered.length === 0 && (
+                <div className="text-center py-12 text-gray-400">
+                  <span className="material-symbols-outlined text-4xl mb-2 opacity-30">chat_bubble</span>
+                  <p className="text-sm font-bold">Tidak ada pesan</p>
+                </div>
               )}
+
+              {filtered.map((msg) => (
+                <div key={msg.id} className={`bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 ${msg.status === 'rejected' ? 'opacity-60' : ''}`}>
+                  
+                  {/* Header */}
+                  <div className="p-4 md:p-5 border-b border-gray-100">
+                    <div className="flex justify-between items-start mb-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 bg-[#c5eadf] rounded-full flex items-center justify-center flex-shrink-0">
+                          <span className="text-[#0F4A33] font-bold text-[16px]">{msg.buyer.charAt(0)}</span>
+                        </div>
+                        <div>
+                          <div className="flex flex-wrap items-center gap-2">
+                            <h4 className="text-[15px] font-bold text-gray-800 leading-tight">{msg.buyer}</h4>
+                            {msg.status === 'pending' && <span className="px-2 py-0.5 bg-[#e5e2e1] text-[#1c1b1b] rounded-full text-[9px] font-bold uppercase tracking-wider">High Priority</span>}
+                            <span className="px-2 py-0.5 bg-[#b0f2b7] text-[#00280d] rounded-full text-[9px] font-bold uppercase tracking-wider flex items-center gap-1">
+                              <span className="material-symbols-outlined text-[10px]">bolt</span> AI Translated
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-1 text-[#414846] mt-1">
+                            <span className="material-symbols-outlined text-[12px]">public</span>
+                            <span className="text-[11px] font-medium">{msg.buyerCountry} &bull; {msg.time}</span>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex flex-col items-end text-right">
+                        <span className="text-[9px] font-bold text-[#414846] uppercase tracking-widest mb-0.5">Conversation ID</span>
+                        <span className="text-[13px] font-bold text-[#01261f]">#{msg.channel.toUpperCase()}-9823{msg.id}</span>
+                      </div>
+                    </div>
+
+                    {/* Content Grid (Responsive) */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                      <div className="bg-gray-50 p-4 rounded-lg border-l-4 border-gray-300">
+                        <p className="text-[10px] font-bold uppercase tracking-wider text-gray-500 mb-2">PESAN ASLI</p>
+                        <p className="text-sm italic text-gray-700">"{msg.originalText}"</p>
+                      </div>
+                      <div className="bg-blue-50 p-4 rounded-lg border-l-4 border-blue-400">
+                        <p className="text-[10px] font-bold uppercase tracking-wider text-blue-600 mb-2">TERJEMAHAN AI</p>
+                        <p className="text-sm text-gray-800">"{msg.translatedText}"</p>
+                      </div>
+                      <div className="bg-[#f0faf5] p-4 rounded-lg border-l-4 border-[#0F4A33] flex flex-col">
+                        <p className="text-[10px] font-bold uppercase tracking-wider text-[#0F4A33] mb-2">BALASAN AI (SARAN)</p>
+                        {editingId === msg.id ? (
+                          <textarea
+                            value={editText}
+                            onChange={e => setEditText(e.target.value)}
+                            className="w-full text-sm text-gray-800 bg-white border border-[#0F4A33]/30 rounded-lg p-2.5 resize-none focus:outline-none focus:border-[#0F4A33] flex-1 min-h-[80px]"
+                          />
+                        ) : (
+                          <p className="text-sm text-gray-800">"{msg.aiReply}"</p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Footer Actions */}
+                  {msg.status === 'pending' && (
+                    <div className="px-4 py-3 bg-gray-50 flex flex-col md:flex-row justify-between items-center gap-3">
+                      <div className="flex gap-4 w-full md:w-auto order-2 md:order-1 justify-center md:justify-start">
+                        {editingId !== msg.id && (
+                          <>
+                            <button onClick={() => handleEdit(msg)} className="flex items-center gap-1.5 text-gray-500 hover:text-[#0F4A33] font-bold text-[13px] transition-colors">
+                              <span className="material-symbols-outlined text-[16px]">edit_note</span> Edit Respon
+                            </button>
+                            <button onClick={() => handleReject(msg.id)} className="flex items-center gap-1.5 text-red-500 hover:text-red-600 font-bold text-[13px] transition-colors">
+                              <span className="material-symbols-outlined text-[16px]">close</span> Tolak
+                            </button>
+                          </>
+                        )}
+                      </div>
+                      
+                      <div className="w-full md:w-auto order-1 md:order-2">
+                        {editingId === msg.id ? (
+                          <button onClick={() => handleSaveEdit(msg.id)} className="w-full md:w-auto bg-[#0F4A33] text-white px-5 py-2 rounded-lg text-sm font-semibold flex items-center justify-center gap-2 active:scale-95 transition-transform">
+                            <span className="material-symbols-outlined text-[16px]">send</span> Simpan & Kirim
+                          </button>
+                        ) : (
+                          <button onClick={() => handleApprove(msg.id)} className="w-full md:w-auto bg-[#0F4A33] text-white px-5 py-2 rounded-lg text-sm font-semibold flex items-center justify-center gap-2 active:scale-95 transition-all shadow-sm">
+                            <span className="material-symbols-outlined text-[16px]">send</span> Approve & Kirim
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                  
+                  {msg.status === 'approved' && (
+                    <div className="px-5 py-3 bg-gray-50 flex items-center justify-center md:justify-start gap-1.5 text-green-700">
+                      <span className="material-symbols-outlined text-[16px]">check_circle</span>
+                      <p className="text-[11px] font-bold uppercase tracking-wider">Telah Disetujui & Terkirim</p>
+                    </div>
+                  )}
+                </div>
+              ))}
             </div>
-
-            {/* ACTION BUTTONS */}
-            {msg.status === 'pending' && (
-              <div className="px-4 py-3 flex gap-2">
-                {editingId === msg.id ? (
-                  <button
-                    onClick={() => handleSaveEdit(msg.id)}
-                    className="flex-1 bg-[#0F4A33] text-white text-xs font-semibold py-2.5 rounded-xl flex items-center justify-center gap-1.5"
-                  >
-                    <Send size={13} /> Kirim Balasan
-                  </button>
-                ) : (
-                  <>
-                    <button
-                      onClick={() => handleApprove(msg.id)}
-                      className="flex-1 bg-[#0F4A33] text-white text-xs font-semibold py-2.5 rounded-xl flex items-center justify-center gap-1.5"
-                    >
-                      <Check size={13} /> Approve
-                    </button>
-                    <button
-                      onClick={() => handleEdit(msg)}
-                      className="flex-1 bg-white border border-gray-200 text-gray-600 text-xs font-semibold py-2.5 rounded-xl flex items-center justify-center gap-1.5"
-                    >
-                      <Edit3 size={13} /> Edit
-                    </button>
-                    <button
-                      onClick={() => handleReject(msg.id)}
-                      className="w-10 bg-white border border-gray-200 text-red-400 text-xs font-semibold py-2.5 rounded-xl flex items-center justify-center"
-                    >
-                      <X size={13} />
-                    </button>
-                  </>
-                )}
-              </div>
-            )}
-
-            {msg.status === 'approved' && (
-              <div className="px-4 py-3 flex items-center gap-1.5 text-green-600">
-                <Check size={13} />
-                <p className="text-xs font-medium">Balasan telah dikirim ke buyer</p>
-              </div>
-            )}
           </div>
-        ))}
-      </div>
+        </div>
 
-      {/* BOTTOM NAV */}
-      <nav className="fixed bottom-0 left-1/2 -translate-x-1/2 max-w-[430px] w-full bg-white border-t border-gray-200 flex">
-        <Link href="/dashboard" className="flex-1 flex flex-col items-center py-3 text-gray-400">
-          <Package size={22} /><span className="text-xs mt-1">Produk</span>
-        </Link>
-        <Link href="/upload" className="flex-1 flex flex-col items-center py-3 text-gray-400">
-          <Plus size={22} /><span className="text-xs mt-1">Upload</span>
-        </Link>
-        <Link href="/conversations" className="flex-1 flex flex-col items-center py-3 text-gray-400">
-          <MessageSquare size={22} /><span className="text-xs mt-1">Pesan</span>
-        </Link>
-      </nav>
+        {/* BOTTOM NAV MOBILE */}
+        <nav className="md:hidden fixed bottom-0 left-0 w-full bg-[#01261f] border-t border-[#83a69c]/10 flex z-50 pb-safe shadow-lg">
+          {[
+            { label: 'Produk', href: '/dashboard', icon: 'inventory_2' },
+            { label: 'Upload', href: '/upload', icon: 'upload_file' },
+            { label: 'Pesan', href: '/conversations', icon: 'forum' },
+            { label: 'WhatsApp', href: '/whatsapp', icon: 'chat' },
+            { label: 'Panduan', href: '/panduan', icon: 'menu_book' }
+          ].map((item) => {
+            const isActive = item.href === '/dashboard' 
+              ? (pathname === '/dashboard' || (pathname && pathname.startsWith('/product')))
+              : (pathname === item.href || (pathname && pathname.startsWith(item.href)));
+            return (
+              <Link 
+                key={item.href} 
+                href={item.href} 
+                className={`flex-1 flex flex-col items-center py-2.5 transition-colors relative ${
+                  isActive ? 'text-[#fe802f]' : 'text-[#83a69c] opacity-80 hover:opacity-100'
+                }`}
+              >
+                <span 
+                  className="material-symbols-outlined text-[20px]" 
+                  style={{ fontVariationSettings: isActive ? "'FILL' 1" : "'FILL' 0" }}
+                >
+                  {item.icon}
+                </span>
+                {item.label === 'Pesan' && (
+                  <span className="absolute top-2.5 right-6 w-2 h-2 bg-red-500 rounded-full border border-[#01261f]"></span>
+                )}
+                <span className={`text-[9px] mt-0.5 ${isActive ? 'font-bold' : 'font-medium'}`}>{item.label}</span>
+              </Link>
+            );
+          })}
+        </nav>
+      </main>
     </div>
   );
 }

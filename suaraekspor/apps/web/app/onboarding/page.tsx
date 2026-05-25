@@ -39,7 +39,7 @@ export default function OnboardingPage() {
             <div>
               <label className="text-sm font-semibold text-gray-700 mb-1 block">Nama Lengkap</label>
               <input value={form.name} onChange={e => setForm({...form, name: e.target.value})}
-                placeholder="Pak Slamet" className="w-full border border-gray-300 rounded-xl px-4 py-3 outline-none focus:border-green-600" />
+                placeholder="Pak Budi" className="w-full border border-gray-300 rounded-xl px-4 py-3 outline-none focus:border-green-600" />
             </div>
             <div>
               <label className="text-sm font-semibold text-gray-700 mb-1 block">Nama Usaha</label>

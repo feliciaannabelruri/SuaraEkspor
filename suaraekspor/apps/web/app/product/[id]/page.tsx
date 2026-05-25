@@ -1,10 +1,12 @@
 'use client';
 // PATH: suaraekspor/apps/web/app/product/[id]/page.tsx
 
-import { useRouter } from 'next/navigation';
-import { Volume2, TrendingUp, Globe, Copy, CheckCircle, ChevronLeft, Share2, ExternalLink } from 'lucide-react';
+import { useRouter, usePathname } from 'next/navigation';
 import { useState } from 'react';
-
+import Link from 'next/link';
+import { useMiddleman } from "../../context/middleman-context";
+import Sidebar from '../../../components/layout/Sidebar';
+import MobileProfileMenu from '../../../components/layout/MobileProfileMenu';
 const PRODUCT = {
   id: '1',
   title: 'Batik Tulis Pekalongan — Motif Parang Klasik',
@@ -32,8 +34,10 @@ const PRODUCT = {
   ],
 };
 
-export default function ProductDetailPage() {
+export default function ProductDetail() {
   const router = useRouter();
+  const pathname = usePathname();
+  const { isMiddleman, setIsMiddleman, activeUMKM } = useMiddleman();
   const [playingAudio, setPlayingAudio] = useState(false);
   const [activeTab, setActiveTab] = useState<'listings' | 'keywords'>('listings');
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
@@ -41,260 +45,387 @@ export default function ProductDetailPage() {
 
   function handlePlayAudio() {
     setPlayingAudio(true);
-    setTimeout(() => setPlayingAudio(false), 3500);
+    setTimeout(() => setPlayingAudio(false), 3000);
   }
 
   function handleCopy(text: string, code: string) {
-    navigator.clipboard.writeText(text).catch(() => {});
+    navigator.clipboard.writeText(text);
     setCopiedCode(code);
     setTimeout(() => setCopiedCode(null), 2000);
   }
 
   const scoreBar = PRODUCT.score >= 80 ? 'bg-green-500' : PRODUCT.score >= 60 ? 'bg-amber-500' : 'bg-red-400';
 
-  // Tambah di dalam component, setelah deklarasi state yang sudah ada
-const [shared, setShared] = useState(false);
+  const [shared, setShared] = useState(false);
 
-async function handleShare() {
-  if (navigator.share) {
-    await navigator.share({
-      title: PRODUCT.title,
-      text: `Cek produk ini di SuaraEkspor: ${PRODUCT.title}`,
-      url: window.location.href,
-    }).catch(() => {});
-  } else {
-    await navigator.clipboard.writeText(window.location.href).catch(() => {});
-    setShared(true);
-    setTimeout(() => setShared(false), 2000);
+  async function handleShare() {
+    if (navigator.share) {
+      await navigator.share({
+        title: PRODUCT.title,
+        text: `Cek produk ini di SuaraEkspor: ${PRODUCT.title}`,
+        url: window.location.href,
+      }).catch(() => { });
+    } else {
+      await navigator.clipboard.writeText(window.location.href).catch(() => { });
+      setShared(true);
+      setTimeout(() => setShared(false), 2000);
+    }
   }
-}
 
   return (
-    <div className="min-h-screen bg-[#F7F7F5] pb-10">
-      {/* HEADER */}
-      <div className="bg-[#0F4A33] px-5 py-5">
-        <button onClick={() => router.back()} className="flex items-center gap-1.5 text-[#7EE8BC] text-sm mb-3">
-          <ChevronLeft size={16} /> Dashboard
-        </button>
-        <div className="flex items-start justify-between gap-3">
-          <div className="flex-1">
-            <h1 className="text-white text-lg font-bold leading-tight">{PRODUCT.title}</h1>
-            <p className="text-[#A8D5C2] text-xs mt-1">{PRODUCT.province}</p>
-          </div>
-          <div className="bg-white/10 rounded-xl px-3 py-2 text-center flex-shrink-0 border border-white/20">
-            <p className="text-[#7EE8BC] text-[10px] font-semibold">Export Score</p>
-            <p className="text-2xl font-extrabold text-white">{PRODUCT.score}</p>
-            <p className="text-white/50 text-[9px]">/ 100</p>
-          </div>
-        </div>
-        <div className="mt-3 flex items-center gap-2">
-          <div className="w-2 h-2 bg-[#7EE8BC] rounded-full animate-pulse" />
-          <span className="text-[#7EE8BC] text-xs font-semibold">Aktif di marketplace · 6 bahasa tersedia</span>
-        </div>
-      </div>
+    <div className="min-h-screen bg-background font-body-md text-on-surface flex">
+      <Sidebar />
 
-      <div className="px-5 pt-4 flex flex-col gap-4">
-
-        {/* HARGA */}
-        <div className="bg-white rounded-xl p-4 border border-gray-100">
-          <div className="flex items-center gap-2 mb-2">
-            <TrendingUp size={15} className="text-green-700" />
-            <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">Rekomendasi Harga AI</p>
+      {/* Main Content Area */}
+      <main className="flex-1 md:ml-56 bg-[#fdf0e8] min-h-screen flex flex-col overflow-y-auto pb-24 md:pb-0">
+        {/* Top Navbar */}
+        <header className="bg-white border-b border-gray-200 h-16 flex items-center justify-between px-6 md:px-8 sticky top-0 z-30">
+          <div>
+            <h1 className="text-sm font-bold text-gray-800">Produk</h1>
+            <p className="text-xs text-gray-500">Detail & Listing</p>
           </div>
-          <div className="flex items-baseline gap-3 mb-2">
-            <p className="text-4xl font-extrabold text-[#0F4A33]">${PRODUCT.price}</p>
-            <p className="text-sm text-gray-400">/ lembar</p>
-          </div>
-          <div className="flex items-center gap-3 mb-3">
-            <span className="text-xs text-gray-500">Rentang:</span>
-            <span className="text-xs font-semibold text-gray-700">${PRODUCT.priceRange.min} – ${PRODUCT.priceRange.max}</span>
-          </div>
-          <div className="w-full bg-gray-100 rounded-full h-2 mb-1">
-            <div className={`${scoreBar} h-2 rounded-full transition-all`} style={{ width: `${PRODUCT.score}%` }} />
-          </div>
-          <div className="flex justify-between text-[10px] text-gray-400">
-            <span>Kurang kompetitif</span>
-            <span className="font-semibold text-green-600">Score: {PRODUCT.score}/100</span>
-            <span>Sangat kompetitif</span>
-          </div>
-          <p className="text-xs text-gray-500 leading-relaxed mt-3 bg-gray-50 rounded-lg p-2.5">{PRODUCT.priceRationale}</p>
-        </div>
-
-        {/* VOICE NOTIFICATION */}
-        <button onClick={handlePlayAudio}
-          className={`w-full rounded-xl p-4 flex items-center gap-3 transition-all active:scale-95 ${
-            playingAudio ? 'bg-green-700' : 'bg-[#0F4A33]'
-          }`}>
-          <div className={`w-12 h-12 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0 ${playingAudio ? 'animate-pulse' : ''}`}>
-            <Volume2 size={22} className="text-white" />
-          </div>
-          <div className="text-left flex-1">
-            <p className="text-white font-bold text-sm">{playingAudio ? 'Memutar ringkasan...' : 'Dengar Ringkasan Suara'}</p>
-            <p className="text-white/60 text-xs">Ringkasan dalam Bahasa Jawa · ~20 detik</p>
-          </div>
-          {playingAudio ? (
-            <div className="flex gap-0.5 items-end h-7">
-              {[3, 5, 4, 7, 3, 6, 4, 5].map((h, i) => (
-                <div key={i} className="w-1 bg-[#7EE8BC] rounded-full animate-pulse" style={{ height: `${h * 4}px`, animationDelay: `${i * 0.1}s` }} />
-              ))}
-            </div>
-          ) : (
-            <div className="w-8 h-8 bg-white/10 rounded-full flex items-center justify-center">
-              <span className="text-white text-xs">▶</span>
-            </div>
-          )}
-        </button>
-
-        {/* TRANSCRIPT */}
-        <div className="bg-white rounded-xl p-4 border border-gray-100">
-          <div className="flex items-center justify-between mb-2">
-            <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">Transkripsi Suara</p>
-            <span className="text-[10px] bg-blue-50 text-blue-700 font-semibold px-2 py-0.5 rounded-full border border-blue-200">Whisper AI</span>
-          </div>
-          <p className="text-xs text-gray-400 mb-2">Terdeteksi: <span className="font-semibold text-gray-600">{PRODUCT.transcriptLang}</span></p>
-          <p className="text-sm text-gray-700 italic leading-relaxed bg-gray-50 rounded-lg p-3">{PRODUCT.transcript}</p>
-        </div>
-
-        {/* VISION ANALYSIS */}
-        <div className="bg-white rounded-xl p-4 border border-gray-100">
-          <div className="flex items-center justify-between mb-3">
-            <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">Analisis Foto</p>
-            <span className="text-[10px] bg-purple-50 text-purple-700 font-semibold px-2 py-0.5 rounded-full border border-purple-200">GPT-4o Vision</span>
-          </div>
-          <div className="grid grid-cols-2 gap-2 mb-3">
-            {[
-              { label: 'Jenis Produk', value: PRODUCT.vision.type },
-              { label: 'Kondisi', value: PRODUCT.vision.condition },
-              { label: 'Kategori', value: PRODUCT.vision.category },
-            ].map(item => (
-              <div key={item.label} className="bg-gray-50 rounded-lg p-2">
-                <p className="text-[9px] text-gray-400 uppercase">{item.label}</p>
-                <p className="text-xs font-semibold text-gray-800 mt-0.5">{item.value}</p>
+          <div className="flex items-center gap-3">
+            {/* Export Score */}
+            <div className="hidden md:flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-md px-3 py-1.5 shadow-sm">
+              <span className="text-[9px] font-bold text-gray-500 tracking-wider uppercase">Export Score</span>
+              <div className="flex items-baseline gap-0.5">
+                <span className="text-base font-bold text-[#0F4A33]">{PRODUCT.score}</span>
+                <span className="text-[10px] text-gray-400 font-bold">/ 100</span>
               </div>
-            ))}
+            </div>
+            <button onClick={() => router.back()} className="hidden md:flex items-center gap-2 px-3 py-1.5 border border-gray-200 rounded-md text-xs font-semibold text-gray-700 hover:bg-gray-50 transition-colors bg-white shadow-sm">
+              <span className="material-symbols-outlined text-[16px]">arrow_back</span>
+              Dashboard
+            </button>
+            <MobileProfileMenu />
           </div>
-          <p className="text-[10px] text-gray-400 mb-1.5 uppercase font-semibold">Fitur Visual Terdeteksi</p>
-          <div className="flex flex-wrap gap-1.5">
-            {PRODUCT.vision.features.map(f => (
-              <span key={f} className="bg-green-50 text-green-800 text-[10px] font-semibold px-2 py-1 rounded-full border border-green-200">{f}</span>
-            ))}
-          </div>
-        </div>
+        </header>
 
-        {/* TARGET PASAR */}
-        <div className="bg-white rounded-xl p-4 border border-gray-100">
-          <div className="flex items-center gap-2 mb-3">
-            <Globe size={15} className="text-green-700" />
-            <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">Target Pasar</p>
+        {/* Insights Bento Grid */}
+        <section className="px-4 md:px-8 pt-4 md:pt-8 pb-20 md:pb-12 max-w-[1440px] mx-auto flex-1 w-full">
+          <div className="mb-4">
+            <div className="text-[10px] text-gray-500 font-medium mb-1">Admin : Produk</div>
+            <h2 className="text-xl md:text-2xl font-bold text-gray-800 mb-0.5 truncate">{PRODUCT.title}</h2>
+            <div className="flex items-center gap-3 text-xs text-gray-500 mt-1">
+              <div className="flex items-center gap-1">
+                <span className="material-symbols-outlined text-[14px]">location_on</span>
+                <span>{PRODUCT.province}</span>
+              </div>
+              <span>•</span>
+              <div className="flex items-center gap-1.5 text-green-600 bg-green-50 px-2 py-0.5 rounded-full border border-green-100">
+                <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></span>
+                <span className="font-bold text-[10px] tracking-wide">Aktif · {PRODUCT.listings.length} bahasa</span>
+              </div>
+            </div>
           </div>
-          <div className="flex flex-wrap gap-2">
-            {PRODUCT.markets.map(m => (
-              <span key={m} className="bg-[#0F4A33] text-white text-xs font-semibold px-3 py-1.5 rounded-full">{m}</span>
-            ))}
-          </div>
-        </div>
+          <div className="grid grid-cols-12 gap-4 md:gap-6">
+            
+            {/* Card 1: AI Pricing Recommendation */}
+            <div className="col-span-12 lg:col-span-8 bg-surface-container-lowest rounded-xl p-6 border border-outline-variant/30 shadow-sm">
+              <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center gap-2">
+                  <span className="material-symbols-outlined text-primary text-xl" style={{ fontVariationSettings: "'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24" }}>monitoring</span>
+                  <h3 className="text-label-caps text-on-surface-variant">REKOMENDASI HARGA AI</h3>
+                </div>
+                <span className="bg-primary-container/10 text-on-primary-container px-3 py-1 rounded-full text-[10px] font-bold">Powered by Market Engine</span>
+              </div>
+              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6 sm:gap-10 mb-8">
+                <div className="flex flex-col shrink-0">
+                  <span className="text-4xl font-extrabold text-secondary-container leading-tight">${PRODUCT.price}</span>
+                  <span className="text-on-surface-variant text-xs font-medium">Harga Rekomendasi</span>
+                </div>
+                <div className="flex-grow space-y-4">
+                  <div className="flex justify-between text-xs font-bold text-label-caps text-on-surface-variant">
+                    <span>Range: ${PRODUCT.priceRange.min} — ${PRODUCT.priceRange.max}</span>
+                    <span className="text-primary">Target Global</span>
+                  </div>
+                  <div className="relative h-3 w-full bg-surface-container-high rounded-full overflow-hidden">
+                    <div className="absolute top-0 left-0 h-full bg-gradient-to-r from-secondary-container to-on-tertiary-container rounded-full transition-all duration-500" style={{ width: `${PRODUCT.score}%` }}></div>
+                  </div>
+                  <div className="flex justify-between text-[10px] font-bold text-label-caps uppercase text-on-surface-variant opacity-70">
+                    <span>Kurang kompetitif</span>
+                    <span className="text-primary font-extrabold text-xs">Score: {PRODUCT.score}/100</span>
+                    <span>Sangat kompetitif</span>
+                  </div>
+                </div>
+              </div>
+              <div className="p-4 bg-tertiary-fixed/10 border border-tertiary-fixed-dim/30 rounded-lg flex items-start gap-3">
+                <span className="material-symbols-outlined text-on-tertiary-fixed-variant" style={{ fontVariationSettings: "'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24" }}>lightbulb</span>
+                <p className="text-sm text-on-tertiary-fixed-variant">{PRODUCT.priceRationale}</p>
+              </div>
+            </div>
 
-        {/* LISTING MULTIBAHASA */}
-        <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
-          <div className="flex border-b border-gray-100">
-            {(['listings', 'keywords'] as const).map(tab => (
-              <button key={tab} onClick={() => setActiveTab(tab)}
-                className={`flex-1 py-3 text-xs font-bold transition-colors ${
-                  activeTab === tab
-                    ? 'text-[#0F4A33] border-b-2 border-[#0F4A33] bg-green-50/50'
-                    : 'text-gray-400'
-                }`}>
-                {tab === 'listings' ? '🌍 Listing Multibahasa' : '🔍 Keywords SEO'}
-              </button>
-            ))}
-          </div>
+            {/* Card 2: Voice Summary */}
+            <div className="col-span-12 lg:col-span-4 bg-primary-container text-on-primary rounded-xl p-6 shadow-xl relative overflow-hidden flex flex-col justify-between">
+              <div className="absolute -right-12 -top-12 w-48 h-48 bg-on-primary-container/10 rounded-full blur-3xl"></div>
+              <div>
+                <h3 className="text-[10px] font-bold tracking-wider text-on-primary-container mb-4">DENGAR RINGKASAN SUARA</h3>
+                <div className="flex items-center gap-4">
+                  <button onClick={handlePlayAudio} className={`w-12 h-12 rounded-full flex items-center justify-center shadow-lg transition-transform active:scale-95 ${playingAudio ? 'bg-secondary-container animate-pulse' : 'bg-secondary-container hover:scale-105'}`}>
+                    <span className="material-symbols-outlined text-white text-2xl" style={{ fontVariationSettings: "'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24" }}>volume_up</span>
+                  </button>
+                  <div>
+                    <p className="text-lg font-bold leading-tight text-white mb-0.5">Ringkasan Narasi</p>
+                    <p className="text-on-primary-container text-xs">Dalam {PRODUCT.transcriptLang} · ~20 detik</p>
+                  </div>
+                </div>
+              </div>
+              {playingAudio ? (
+                <div className="mt-6 flex items-center justify-between bg-white/10 rounded-full p-1.5 pl-5">
+                  <span className="text-[11px] font-medium text-white/80">Sedang diputar...</span>
+                  <div className="flex gap-1 items-center h-5 mr-3">
+                    {[3, 5, 4, 7, 3, 6, 4, 5].map((h, i) => (
+                      <div key={i} className="w-1 bg-white rounded-full animate-pulse" style={{ height: `${h * 3}px`, animationDelay: `${i * 0.1}s` }} />
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <div className="mt-6 flex items-center justify-between bg-white/10 rounded-full p-1.5 pl-5 cursor-pointer hover:bg-white/20 transition-colors active:scale-[0.98]" onClick={handlePlayAudio}>
+                  <span className="text-[11px] font-medium text-white/80">Siap diputar</span>
+                  <button className="w-8 h-8 bg-white text-primary-container rounded-full flex items-center justify-center">
+                    <span className="material-symbols-outlined text-sm" style={{ fontVariationSettings: "'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24" }}>play_arrow</span>
+                  </button>
+                </div>
+              )}
+            </div>
 
-          <div className="p-4">
-            {activeTab === 'listings' && (
-              <div className="flex flex-col gap-3">
-                {PRODUCT.listings.map(l => (
-                  <div key={l.code} className="border border-gray-100 rounded-xl overflow-hidden">
-                    {/* ✅ FIX: outer wrapper pakai div, bukan button */}
-                    <div className="flex items-center gap-3 p-3 hover:bg-gray-50 transition-colors cursor-pointer"
-                      onClick={() => setExpandedListing(expandedListing === l.code ? null : l.code)}>
-                      <span className="text-xl">{l.flag}</span>
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2">
-                          <span className="bg-[#0F4A33] text-white text-[10px] font-bold px-2 py-0.5 rounded">{l.code}</span>
-                          <span className="text-xs text-gray-400">{l.lang}</span>
-                        </div>
-                        <p className="text-xs font-semibold text-gray-800 mt-1 line-clamp-1">{l.title}</p>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        {/* ✅ FIX: copy button pakai div + role="button", bukan button dalam button */}
-                        <div
-                          role="button"
-                          tabIndex={0}
-                          onClick={(e) => { e.stopPropagation(); handleCopy(l.title + '\n\n' + l.desc, l.code); }}
-                          onKeyDown={(e) => { if (e.key === 'Enter') { e.stopPropagation(); handleCopy(l.title + '\n\n' + l.desc, l.code); }}}
-                          className="p-1.5 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors cursor-pointer"
-                        >
-                          {copiedCode === l.code
-                            ? <CheckCircle size={12} className="text-green-600" />
-                            : <Copy size={12} className="text-gray-500" />
-                          }
-                        </div>
-                        <span className="text-gray-400 text-sm">{expandedListing === l.code ? '▲' : '▼'}</span>
-                      </div>
-                    </div>
-                    {expandedListing === l.code && (
-                      <div className="px-3 pb-3 bg-gray-50/50 border-t border-gray-100">
-                        <p className="text-xs text-gray-600 leading-relaxed mt-2">{l.desc}</p>
-                      </div>
-                    )}
+            {/* Card 3: Voice Transcription */}
+            <div className="col-span-12 lg:col-span-6 bg-surface-container-lowest rounded-xl p-6 border border-outline-variant/30 shadow-sm">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2">
+                  <h3 className="text-label-caps text-on-surface-variant">TRANSKRIPSI SUARA</h3>
+                </div>
+                <div className="flex items-center gap-2 bg-surface-container px-2.5 py-1 rounded-md">
+                  <span className="material-symbols-outlined text-xs text-primary" style={{ fontVariationSettings: "'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24" }}>auto_awesome</span>
+                  <span className="text-[9px] font-bold text-label-caps text-on-surface-variant">WHISPER AI</span>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 mb-3">
+                <span className="text-[10px] font-bold text-on-tertiary-fixed-variant bg-tertiary-fixed px-2 py-0.5 rounded">Terdeteksi: {PRODUCT.transcriptLang}</span>
+              </div>
+              <blockquote className="text-on-surface italic text-sm border-l-2 border-secondary-container/30 pl-4 py-1 leading-relaxed">
+                {PRODUCT.transcript}
+              </blockquote>
+              <div className="mt-6 flex gap-2">
+                <button className="text-primary text-xs font-bold flex items-center gap-1 hover:underline">
+                  <span className="material-symbols-outlined text-xs" style={{ fontVariationSettings: "'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24" }}>translate</span> Lihat Terjemahan Inggris
+                </button>
+              </div>
+            </div>
+
+            {/* Card 4: Photo Analysis */}
+            <div className="col-span-12 lg:col-span-6 bg-surface-container-lowest rounded-xl p-6 border border-outline-variant/30 shadow-sm flex flex-col">
+              <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center gap-2">
+                  <h3 className="text-label-caps text-on-surface-variant">ANALISIS FOTO</h3>
+                </div>
+                <div className="flex items-center gap-2 bg-surface-container px-2.5 py-1 rounded-md">
+                  <span className="material-symbols-outlined text-xs text-primary" style={{ fontVariationSettings: "'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24" }}>visibility</span>
+                  <span className="text-[9px] font-bold text-label-caps text-on-surface-variant uppercase">GPT-4o Vision</span>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4 flex-grow">
+                {[
+                  { label: 'JENIS PRODUK', value: PRODUCT.vision.type },
+                  { label: 'KONDISI', value: PRODUCT.vision.condition },
+                  { label: 'KATEGORI', value: PRODUCT.vision.category },
+                ].map(item => (
+                  <div key={item.label} className="bg-background p-4 rounded-lg border border-outline-variant/20">
+                    <span className="block text-[10px] text-on-surface-variant text-label-caps font-bold mb-2">{item.label}</span>
+                    <span className="text-primary font-bold">{item.value}</span>
                   </div>
                 ))}
+                <div className="bg-background p-4 rounded-lg border border-outline-variant/20">
+                  <span className="block text-[10px] text-on-surface-variant text-label-caps font-bold mb-2">FITUR VISUAL</span>
+                  <div className="flex flex-wrap gap-1.5 mt-1">
+                    {PRODUCT.vision.features.map(f => (
+                      <span key={f} className="text-primary text-[10px] font-bold px-2 py-0.5 rounded-sm bg-primary/10">{f}</span>
+                    ))}
+                  </div>
+                </div>
               </div>
-            )}
+            </div>
 
-            {activeTab === 'keywords' && (
-              <div className="flex flex-col gap-3">
-                {PRODUCT.listings.map(l => (
-                  <div key={l.code}>
-                    <div className="flex items-center gap-2 mb-2">
-                      <span className="text-base">{l.flag}</span>
-                      <span className="bg-[#0F4A33] text-white text-[10px] font-bold px-2 py-0.5 rounded">{l.code}</span>
-                      <span className="text-xs text-gray-400">{l.lang}</span>
-                    </div>
-                    <div className="flex flex-wrap gap-1.5">
-                      {l.keywords.map(k => (
-                        <span key={k}
-                          className="bg-gray-100 text-gray-600 text-[10px] px-2 py-1 rounded-full cursor-pointer hover:bg-gray-200 transition-colors"
-                          onClick={() => handleCopy(k, l.code + k)}>
-                          {k}
-                        </span>
+            {/* Target Pasar & Listing Multibahasa Column */}
+            <div className="col-span-12 lg:col-span-12 grid grid-cols-12 gap-4">
+              
+              {/* Target Pasar */}
+              <div className="col-span-12 md:col-span-4 bg-surface-container-lowest rounded-xl p-6 border border-outline-variant/30 shadow-sm flex flex-col justify-between">
+                <div>
+                  <h3 className="text-label-caps text-on-surface-variant mb-4">REKOMENDASI TARGET PASAR</h3>
+                  <div className="flex flex-wrap gap-2">
+                    {PRODUCT.markets.map(m => (
+                      <span key={m} className="bg-secondary/10 text-secondary font-bold text-xs px-3.5 py-1.5 rounded-full flex items-center gap-1.5">
+                        <span className="w-1.5 h-1.5 rounded-full bg-secondary"></span>
+                        {m}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+                <div className="mt-6 border-t border-outline-variant/20 pt-4">
+                  <p className="text-[10px] text-on-surface-variant leading-relaxed">
+                    Negara di atas ditentukan berdasarkan kecocokan kategori dan minat pembeli global tertinggi untuk produk {PRODUCT.vision.type}.
+                  </p>
+                </div>
+              </div>
+
+              {/* Listing Multibahasa */}
+              <div className="col-span-12 md:col-span-8 bg-surface-container-lowest rounded-xl border border-outline-variant/30 shadow-sm overflow-hidden flex flex-col">
+                <div className="p-6 border-b border-outline-variant/30 flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-surface-container-lowest">
+                  <div>
+                    <h3 className="text-label-caps text-on-surface-variant">LISTING MULTIBAHASA AI</h3>
+                    <p className="text-xs text-on-surface-variant mt-1">Gunakan terjemahan teroptimasi untuk e-commerce global.</p>
+                  </div>
+                  <div className="flex gap-1.5 bg-surface-container p-1 rounded-lg border border-outline-variant/20 self-start sm:self-auto">
+                    <button
+                      onClick={() => setActiveTab('listings')}
+                      className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all ${activeTab === 'listings' ? 'bg-primary text-on-primary shadow-sm' : 'text-on-surface-variant hover:text-on-surface'}`}
+                    >
+                      Draft Listing
+                    </button>
+                    <button
+                      onClick={() => setActiveTab('keywords')}
+                      className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all ${activeTab === 'keywords' ? 'bg-primary text-on-primary shadow-sm' : 'text-on-surface-variant hover:text-on-surface'}`}
+                    >
+                      Keywords AI
+                    </button>
+                  </div>
+                </div>
+
+                <div className="p-6 flex-grow">
+                  {activeTab === 'listings' && (
+                    <div className="space-y-4">
+                      {PRODUCT.listings.map(l => (
+                        <div key={l.code} className="border border-outline-variant/30 rounded-xl overflow-hidden shadow-sm transition-all duration-300">
+                          <div
+                            onClick={() => setExpandedListing(expandedListing === l.code ? null : l.code)}
+                            className="p-4 flex items-center justify-between cursor-pointer hover:bg-surface-container-low/50 transition-colors bg-surface-container-lowest"
+                          >
+                            <div className="flex items-center gap-3">
+                              <span className="text-lg">{l.flag}</span>
+                              <div>
+                                <span className="bg-primary text-on-primary text-[9px] font-bold px-1.5 py-0.5 rounded text-label-caps">{l.code}</span>
+                                <span className="text-xs font-bold text-on-surface ml-2">{l.lang}</span>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-4">
+                              <span className="text-[10px] font-bold text-primary">Score: 95/100</span>
+                              <span className="material-symbols-outlined text-on-surface-variant text-[20px] transition-transform duration-300" style={{ transform: expandedListing === l.code ? 'rotate(180deg)' : 'rotate(0deg)' }}>
+                                keyboard_arrow_down
+                              </span>
+                            </div>
+                          </div>
+                          {expandedListing === l.code && (
+                            <div className="p-4 bg-surface-container-lowest border-t border-outline-variant/30 space-y-4">
+                              <div>
+                                <div className="flex justify-between items-center mb-1">
+                                  <label className="text-[9px] font-bold text-on-surface-variant text-label-caps">JUDUL LISTING</label>
+                                  <button onClick={() => handleCopy(l.title, l.code + 'title')} className="text-primary hover:underline text-[10px] font-bold flex items-center gap-1">
+                                    <span className="material-symbols-outlined text-[12px]">{copiedCode === l.code + 'title' ? 'check' : 'content_copy'}</span>
+                                    {copiedCode === l.code + 'title' ? 'Tersalin' : 'Salin'}
+                                  </button>
+                                </div>
+                                <p className="text-xs font-bold text-on-surface leading-normal">{l.title}</p>
+                              </div>
+                              <div>
+                                <div className="flex justify-between items-center mb-1">
+                                  <label className="text-[9px] font-bold text-on-surface-variant text-label-caps">DESKRIPSI LISTING</label>
+                                  <button onClick={() => handleCopy(l.desc, l.code + 'desc')} className="text-primary hover:underline text-[10px] font-bold flex items-center gap-1">
+                                    <span className="material-symbols-outlined text-[12px]">{copiedCode === l.code + 'desc' ? 'check' : 'content_copy'}</span>
+                                    {copiedCode === l.code + 'desc' ? 'Tersalin' : 'Salin'}
+                                  </button>
+                                </div>
+                                <p className="text-xs text-on-surface leading-relaxed mt-3">{l.desc}</p>
+                              </div>
+                            </div>
+                          )}
+                        </div>
                       ))}
                     </div>
-                  </div>
-                ))}
+                  )}
+
+                  {activeTab === 'keywords' && (
+                    <div className="flex flex-col gap-3">
+                      {PRODUCT.listings.map(l => (
+                        <div key={l.code} className="p-4 border border-outline-variant/30 rounded-xl shadow-sm bg-surface-container-lowest">
+                          <div className="flex items-center gap-2 mb-3">
+                            <span className="material-symbols-outlined text-lg text-on-surface-variant" style={{ fontVariationSettings: "'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24" }}>translate</span>
+                            <span className="bg-primary text-on-primary text-[9px] font-bold px-1.5 py-0.5 rounded text-label-caps">{l.code}</span>
+                            <span className="text-[10px] text-on-surface-variant text-label-caps">{l.lang}</span>
+                          </div>
+                          <div className="flex flex-wrap gap-2.5">
+                            {l.keywords.map(k => (
+                              <span key={k}
+                                className="bg-surface-container-high text-on-surface text-xs font-bold px-4 py-2 rounded-full cursor-pointer hover:bg-outline-variant transition-colors"
+                                onClick={() => handleCopy(k, l.code + k)}>
+                                {k}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
-            )}
-          </div>
-        </div>
+              
+            </div>
 
-          {/* SHARE BUTTONS */}
-          <div className="flex gap-3">
-            <button
-              onClick={handleShare}
-              className="flex-1 flex items-center justify-center gap-2 bg-white border border-gray-200 text-gray-700 font-bold py-3.5 rounded-xl text-sm active:scale-95 transition-all"
-            >
-              {shared ? <CheckCircle size={16} className="text-green-600" /> : <Share2 size={16} />}
-              {shared ? 'Link Disalin!' : 'Bagikan'}
-            </button>
-            <button
-              onClick={() => router.push(`/marketplace/${PRODUCT.id ?? '1'}`)}
-              className="flex-1 flex items-center justify-center gap-2 bg-[#0F4A33] text-white font-bold py-3.5 rounded-xl text-sm active:scale-95 transition-all"
-            >
-              <ExternalLink size={16} /> Lihat di Marketplace
-            </button>
-          </div>
+            {/* Share Buttons - Normal size */}
+            <div className="col-span-12 flex flex-col sm:flex-row gap-3 mt-2 justify-end pb-8">
+              <button
+                onClick={handleShare}
+                className="flex items-center justify-center gap-2 bg-surface-container-lowest border border-outline-variant/80 text-on-surface font-bold px-5 py-2.5 rounded-lg text-sm active:scale-95 transition-all shadow-sm hover:bg-surface-container-low w-full sm:w-auto"
+              >
+                {shared ? <span className="material-symbols-outlined text-[18px] text-primary" style={{ fontVariationSettings: "'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24" }}>check_circle</span> : <span className="material-symbols-outlined text-[18px]" style={{ fontVariationSettings: "'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24" }}>share</span>}
+                {shared ? 'Tersalin!' : 'Bagikan'}
+              </button>
+              <button
+                onClick={() => router.push(`/marketplace/${PRODUCT.id ?? '1'}`)}
+                className="flex items-center justify-center gap-2 bg-primary text-on-primary font-bold px-5 py-2.5 rounded-lg text-sm active:scale-95 transition-all shadow-md hover:brightness-110 w-full sm:w-auto"
+              >
+                <span className="material-symbols-outlined text-[18px]" style={{ fontVariationSettings: "'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24" }}>open_in_new</span> Lihat di Marketplace
+              </button>
+            </div>
 
-      </div>
+          </div>
+        </section>
+
+        {/* MOBILE BOTTOM NAV */}
+        <nav className="md:hidden fixed bottom-0 left-0 w-full bg-[#01261f] border-t border-[#83a69c]/10 flex z-50 pb-safe shadow-lg">
+          {[
+            { label: 'Produk', href: '/dashboard', icon: 'inventory_2' },
+            { label: 'Upload', href: '/upload', icon: 'upload_file' },
+            { label: 'Pesan', href: '/conversations', icon: 'forum' },
+            { label: 'WhatsApp', href: '/whatsapp', icon: 'chat' },
+            { label: 'Panduan', href: '/panduan', icon: 'menu_book' }
+          ].map((item) => {
+            const isActive = item.href === '/dashboard' 
+              ? (pathname === '/dashboard' || (pathname && pathname.startsWith('/product')))
+              : (pathname === item.href || (pathname && pathname.startsWith(item.href)));
+            return (
+              <Link 
+                key={item.href} 
+                href={item.href} 
+                className={`flex-1 flex flex-col items-center py-2.5 transition-colors relative ${
+                  isActive ? 'text-[#fe802f]' : 'text-[#83a69c] opacity-80 hover:opacity-100'
+                }`}
+              >
+                <span 
+                  className="material-symbols-outlined text-[20px]" 
+                  style={{ fontVariationSettings: isActive ? "'FILL' 1" : "'FILL' 0" }}
+                >
+                  {item.icon}
+                </span>
+                {item.label === 'Pesan' && (
+                  <span className="absolute top-2.5 right-6 w-2 h-2 bg-red-500 rounded-full border border-[#01261f]"></span>
+                )}
+                <span className={`text-[9px] mt-0.5 ${isActive ? 'font-bold' : 'font-medium'}`}>{item.label}</span>
+              </Link>
+            );
+          })}
+        </nav>
+      </main>
     </div>
   );
 }
