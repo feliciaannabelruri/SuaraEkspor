@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { authMiddleware } from '../middleware/auth.middleware';
+import { authMiddleware, requireRole } from '../middleware/auth.middleware';
 import { uploadAudio, uploadPhoto } from '../middleware/upload.middleware';
 import {
   createProduct,
@@ -15,7 +15,7 @@ const uploadFields = uploadPhoto.fields([
   { name: 'audio', maxCount: 1 },
 ]);
 
-router.post('/', authMiddleware, uploadFields, createProduct);
+router.post('/', authMiddleware, requireRole('seller'), uploadFields, createProduct);
 router.get('/', authMiddleware, listSellerProducts);
 router.get('/:id', getProduct);
 router.get('/:id/status', getProductStatus);

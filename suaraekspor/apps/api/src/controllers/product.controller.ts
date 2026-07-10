@@ -32,7 +32,7 @@ export async function getProductStatus(req: AuthRequest, res: Response) {
   const { id } = req.params;
   const product = await prisma.product.findUnique({
     where: { id },
-    select: { id: true, status: true, aiPipelineStage: true, updatedAt: true },
+    select: { id: true, status: true, aiPipelineStage: true, pipelineError: true, updatedAt: true },
   });
   if (!product) return res.status(404).json({ success: false, error: 'Produk tidak ditemukan' });
 

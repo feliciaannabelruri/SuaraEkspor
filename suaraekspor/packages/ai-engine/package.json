@@ -9,7 +9,8 @@
   },
   "dependencies": {
     "@suaraekspor/shared": "*",
-    "openai": "^4.28.0"
+    "openai": "^4.28.0",
+    "zod": "^3.22.4"
   },
   "devDependencies": {
     "@types/node": "^20.19.37",

@@ -1,22 +1,66 @@
 'use client';
 import Link from 'next/link';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import Sidebar from '../../components/layout/Sidebar';
 import { useMiddleman } from "../context/middleman-context";
 import MobileProfileMenu from '../../components/layout/MobileProfileMenu';
+import apiClient from '@/lib/api-client';
 
-const products = [
-  { id: '1', name: 'Handwoven Rattan Bag', category: 'Kerajinan', price: '$42', aiStatus: 'Done', langs: 'US JP ID', ready: 92, img: 'https://images.unsplash.com/photo-1544816155-12df9643f363?w=100' },
-  { id: '2', name: 'Batik Tulis Premium', category: 'Tekstil', price: '$95', aiStatus: 'Done', langs: 'US CN ID', ready: 100, img: 'https://images.unsplash.com/photo-1605388031580-4ecb273d6bb6?w=100' },
-  { id: '3', name: 'Single Origin Arabica', category: 'Kopi', price: '$28', aiStatus: 'Processing', langs: 'ID', ready: 45, img: 'https://images.unsplash.com/photo-1559525839-b184a4d698c7?w=100' },
-  { id: '4', name: 'Bamboo Zen Lampshade', category: 'Furnitur', price: '$55', aiStatus: 'Pending', langs: 'ID', ready: 0, img: 'https://images.unsplash.com/photo-1513506003901-1e6a229e2d15?w=100' },
-];
+interface Listing {
+  languageCode: string;
+  languageName: string;
+  title: string;
+  description: string;
+  keywords: string[];
+}
+
+interface Product {
+  id: string;
+  status: 'processing' | 'active' | 'inactive';
+  photoUrls: string[];
+  recommendedPriceUsd?: number;
+  priceRangeMin?: number;
+  priceRangeMax?: number;
+  category?: string;
+  exportReadinessScore?: number;
+  aiPipelineStage?: string;
+  listings: Listing[];
+  createdAt: string;
+}
+
+const FALLBACK_IMG = 'https://images.unsplash.com/photo-1544816155-12df9643f363?w=100';
+
+function getAiStatusLabel(p: Product): 'Done' | 'Error' | 'Pending' | 'Processing' {
+  if (p.aiPipelineStage === 'done') return 'Done';
+  if (p.aiPipelineStage === 'error') return 'Error';
+  if (p.status === 'processing' && p.aiPipelineStage === 'pending') return 'Pending';
+  return 'Processing';
+}
 
 export default function DashboardPage() {
   const pathname = usePathname();
+  const router = useRouter();
   const { isMiddleman, activeUMKM, handleToggleMiddleman } = useMiddleman();
   const [censoredIds, setCensoredIds] = useState<Set<string>>(new Set());
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined' && !localStorage.getItem('se_token')) {
+      router.push('/login');
+      return;
+    }
+    apiClient
+      .get('/products')
+      .then(({ data }) => {
+        setProducts(data.data ?? []);
+      })
+      .catch(() => {
+        setProducts([]);
+      })
+      .finally(() => setLoading(false));
+  }, [router]);
 
   function toggleCensor(id: string) {
     setCensoredIds(prev => {
@@ -29,6 +73,10 @@ export default function DashboardPage() {
 
   const sellerName = isMiddleman && activeUMKM ? activeUMKM.owner : 'Pak Budi';
   const businessName = isMiddleman && activeUMKM ? activeUMKM.name : 'Anda';
+
+  const totalProducts = products.length;
+  const exportReadyCount = products.filter(p => (p.exportReadinessScore ?? 0) >= 70).length;
+  const exportReadyRatio = totalProducts > 0 ? Math.round((exportReadyCount / totalProducts) * 100) : 0;
 
   return (
     <div className="flex min-h-screen bg-[#FDF0E8] text-[#1c1b1b] font-body-md overflow-x-hidden">
@@ -73,10 +121,9 @@ export default function DashboardPage() {
                 <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center text-gray-700">
                   <span className="material-symbols-outlined text-xl">inventory_2</span>
                 </div>
-                <span className="text-[10px] font-bold text-gray-600 bg-gray-100 px-2 py-1 rounded">+2 bulan ini</span>
               </div>
               <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Total Products</p>
-              <p className="text-3xl font-bold text-[#0F4A33]">12</p>
+              <p className="text-3xl font-bold text-[#0F4A33]">{totalProducts}</p>
             </div>
 
             <div className="bg-white rounded-2xl p-5 border border-gray-200 shadow-sm flex flex-col">
@@ -95,10 +142,10 @@ export default function DashboardPage() {
                 <div className="w-10 h-10 bg-[#7EE8BC]/20 rounded-lg flex items-center justify-center text-[#0F4A33]">
                   <span className="material-symbols-outlined text-xl">check_circle</span>
                 </div>
-                <span className="text-[10px] font-bold text-[#0F4A33] bg-[#7EE8BC]/20 px-2 py-1 rounded">93% Ratio</span>
+                <span className="text-[10px] font-bold text-[#0F4A33] bg-[#7EE8BC]/20 px-2 py-1 rounded">{exportReadyRatio}% Ratio</span>
               </div>
               <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Export Ready</p>
-              <p className="text-3xl font-bold text-[#0F4A33]">7</p>
+              <p className="text-3xl font-bold text-[#0F4A33]">{exportReadyCount}</p>
             </div>
 
             <div className="bg-[#0F4A33] rounded-2xl p-5 shadow-sm flex flex-col">
@@ -123,77 +170,106 @@ export default function DashboardPage() {
               </Link>
             </div>
 
-            <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden overflow-x-auto">
-              <table className="w-full min-w-[800px] text-left">
-                <thead className="bg-gray-50 border-b border-gray-200">
-                  <tr>
-                    <th className="py-4 px-6 text-[10px] font-bold text-gray-500 uppercase tracking-wider">Produk</th>
-                    <th className="py-4 px-6 text-[10px] font-bold text-gray-500 uppercase tracking-wider">Kategori</th>
-                    <th className="py-4 px-6 text-[10px] font-bold text-gray-500 uppercase tracking-wider">Harga ($)</th>
-                    <th className="py-4 px-6 text-[10px] font-bold text-gray-500 uppercase tracking-wider">AI Pipeline</th>
-                    <th className="py-4 px-6 text-[10px] font-bold text-gray-500 uppercase tracking-wider">Bahasa</th>
-                    <th className="py-4 px-6 text-[10px] font-bold text-gray-500 uppercase tracking-wider">Ready %</th>
-                    <th className="py-4 px-6 text-[10px] font-bold text-gray-500 uppercase tracking-wider text-right">Aksi</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-100">
-                  {products.map((p) => (
-                    <tr key={p.id} className="hover:bg-gray-50 transition-colors">
-                      <td className="py-4 px-6 flex items-center gap-4">
-                        <div className={`w-12 h-12 rounded-lg bg-gray-100 flex items-center justify-center overflow-hidden flex-shrink-0 ${censoredIds.has(p.id) ? 'blur-md' : ''}`}>
-                          <img src={p.img} alt={p.name} className="w-full h-full object-cover" />
-                        </div>
-                        <div>
-                          <p className={`font-bold text-gray-800 ${censoredIds.has(p.id) ? 'blur-sm select-none' : ''}`}>{censoredIds.has(p.id) ? '••••••••••••••••' : p.name}</p>
-                        </div>
-                      </td>
-                      <td className="py-4 px-6">
-                        <span className="bg-gray-100 text-gray-600 text-[10px] font-bold px-2.5 py-1 rounded-md">{p.category}</span>
-                      </td>
-                      <td className={`py-4 px-6 font-bold text-gray-800 ${censoredIds.has(p.id) ? 'blur-sm select-none' : ''}`}>{censoredIds.has(p.id) ? '$$$' : p.price}</td>
-                      <td className="py-4 px-6">
-                        {p.aiStatus === 'Done' && (
-                          <div className="flex items-center gap-1.5 text-green-600 text-xs font-bold">
-                            <span className="material-symbols-outlined text-[14px]">check_circle</span>
-                            Done
-                          </div>
-                        )}
-                        {p.aiStatus === 'Processing' && (
-                          <div className="flex items-center gap-1.5 text-[#fe802f] text-xs font-bold">
-                            <span className="material-symbols-outlined text-[14px]">sync</span>
-                            Processing
-                          </div>
-                        )}
-                        {p.aiStatus === 'Pending' && (
-                          <div className="flex items-center gap-1.5 text-gray-400 text-xs font-bold">
-                            <span className="material-symbols-outlined text-[14px]">hourglass_empty</span>
-                            Pending
-                          </div>
-                        )}
-                      </td>
-                      <td className="py-4 px-6 text-xs text-gray-700 font-semibold tracking-wider">{p.langs}</td>
-                      <td className="py-4 px-6">
-                        <div className="w-24">
-                          <div className="h-1.5 w-full bg-gray-100 rounded-full overflow-hidden">
-                            <div
-                              className={`h-full rounded-full ${p.ready >= 90 ? 'bg-[#0F4A33]' : p.ready > 0 ? 'bg-[#fe802f]' : 'bg-gray-300'}`}
-                              style={{ width: `${p.ready}%` }}
-                            />
-                          </div>
-                          <p className="text-[10px] font-bold text-gray-500 mt-1">{p.ready}%</p>
-                        </div>
-                      </td>
-                      <td className="py-4 px-6">
-                        <div className="flex items-center justify-end gap-3 text-gray-400">
-                          <Link href={`/product/${p.id}`} className="hover:text-[#0F4A33] transition-colors"><span className="material-symbols-outlined text-[18px]">edit</span></Link>
-                          <button onClick={() => toggleCensor(p.id)} className="hover:text-[#0F4A33] transition-colors"><span className="material-symbols-outlined text-[18px]">{censoredIds.has(p.id) ? 'visibility_off' : 'visibility'}</span></button>
-                        </div>
-                      </td>
+            {loading ? (
+              <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-10 text-center text-gray-400 text-sm">
+                Memuat produk...
+              </div>
+            ) : products.length === 0 ? (
+              <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-10 text-center">
+                <p className="text-gray-500 text-sm mb-4">Anda belum memiliki produk. Mulai dengan mengunggah produk pertama Anda.</p>
+                <Link href="/upload" className="inline-flex items-center gap-2 bg-[#0F4A33] text-white px-5 py-2.5 rounded-xl font-bold text-sm hover:bg-[#0a3323] transition-colors">
+                  <span className="material-symbols-outlined text-[18px]">add</span>
+                  Upload Produk Baru
+                </Link>
+              </div>
+            ) : (
+              <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden overflow-x-auto">
+                <table className="w-full min-w-[800px] text-left">
+                  <thead className="bg-gray-50 border-b border-gray-200">
+                    <tr>
+                      <th className="py-4 px-6 text-[10px] font-bold text-gray-500 uppercase tracking-wider">Produk</th>
+                      <th className="py-4 px-6 text-[10px] font-bold text-gray-500 uppercase tracking-wider">Kategori</th>
+                      <th className="py-4 px-6 text-[10px] font-bold text-gray-500 uppercase tracking-wider">Harga ($)</th>
+                      <th className="py-4 px-6 text-[10px] font-bold text-gray-500 uppercase tracking-wider">AI Pipeline</th>
+                      <th className="py-4 px-6 text-[10px] font-bold text-gray-500 uppercase tracking-wider">Bahasa</th>
+                      <th className="py-4 px-6 text-[10px] font-bold text-gray-500 uppercase tracking-wider">Ready %</th>
+                      <th className="py-4 px-6 text-[10px] font-bold text-gray-500 uppercase tracking-wider text-right">Aksi</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                    {products.map((p) => {
+                      const name = p.listings?.[0]?.title ?? 'Produk baru';
+                      const category = p.category ?? '-';
+                      const price = p.recommendedPriceUsd ? `$${p.recommendedPriceUsd}` : '—';
+                      const aiStatus = getAiStatusLabel(p);
+                      const langs = p.listings?.length ? p.listings.map(l => l.languageCode.toUpperCase()).join(' ') : '-';
+                      const ready = p.exportReadinessScore ?? 0;
+                      const img = p.photoUrls?.[0] ?? FALLBACK_IMG;
+                      return (
+                        <tr key={p.id} className="hover:bg-gray-50 transition-colors">
+                          <td className="py-4 px-6 flex items-center gap-4">
+                            <div className={`w-12 h-12 rounded-lg bg-gray-100 flex items-center justify-center overflow-hidden flex-shrink-0 ${censoredIds.has(p.id) ? 'blur-md' : ''}`}>
+                              <img src={img} alt={name} className="w-full h-full object-cover" />
+                            </div>
+                            <div>
+                              <p className={`font-bold text-gray-800 ${censoredIds.has(p.id) ? 'blur-sm select-none' : ''}`}>{censoredIds.has(p.id) ? '••••••••••••••••' : name}</p>
+                            </div>
+                          </td>
+                          <td className="py-4 px-6">
+                            <span className="bg-gray-100 text-gray-600 text-[10px] font-bold px-2.5 py-1 rounded-md">{category}</span>
+                          </td>
+                          <td className={`py-4 px-6 font-bold text-gray-800 ${censoredIds.has(p.id) ? 'blur-sm select-none' : ''}`}>{censoredIds.has(p.id) ? '$$$' : price}</td>
+                          <td className="py-4 px-6">
+                            {aiStatus === 'Done' && (
+                              <div className="flex items-center gap-1.5 text-green-600 text-xs font-bold">
+                                <span className="material-symbols-outlined text-[14px]">check_circle</span>
+                                Done
+                              </div>
+                            )}
+                            {aiStatus === 'Processing' && (
+                              <div className="flex items-center gap-1.5 text-[#fe802f] text-xs font-bold">
+                                <span className="material-symbols-outlined text-[14px]">sync</span>
+                                Processing
+                              </div>
+                            )}
+                            {aiStatus === 'Pending' && (
+                              <div className="flex items-center gap-1.5 text-gray-400 text-xs font-bold">
+                                <span className="material-symbols-outlined text-[14px]">hourglass_empty</span>
+                                Pending
+                              </div>
+                            )}
+                            {aiStatus === 'Error' && (
+                              <div className="flex items-center gap-1.5 text-red-500 text-xs font-bold">
+                                <span className="material-symbols-outlined text-[14px]">error</span>
+                                Error
+                              </div>
+                            )}
+                          </td>
+                          <td className="py-4 px-6 text-xs text-gray-700 font-semibold tracking-wider">{langs}</td>
+                          <td className="py-4 px-6">
+                            <div className="w-24">
+                              <div className="h-1.5 w-full bg-gray-100 rounded-full overflow-hidden">
+                                <div
+                                  className={`h-full rounded-full ${ready >= 90 ? 'bg-[#0F4A33]' : ready > 0 ? 'bg-[#fe802f]' : 'bg-gray-300'}`}
+                                  style={{ width: `${ready}%` }}
+                                />
+                              </div>
+                              <p className="text-[10px] font-bold text-gray-500 mt-1">{ready}%</p>
+                            </div>
+                          </td>
+                          <td className="py-4 px-6">
+                            <div className="flex items-center justify-end gap-3 text-gray-400">
+                              <Link href={`/product/${p.id}`} className="hover:text-[#0F4A33] transition-colors"><span className="material-symbols-outlined text-[18px]">edit</span></Link>
+                              <button onClick={() => toggleCensor(p.id)} className="hover:text-[#0F4A33] transition-colors"><span className="material-symbols-outlined text-[18px]">{censoredIds.has(p.id) ? 'visibility_off' : 'visibility'}</span></button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </section>
 
           {/* Dashboard Analytics Preview */}
@@ -336,19 +412,19 @@ export default function DashboardPage() {
             { label: 'WhatsApp', href: '/whatsapp', icon: 'chat' },
             { label: 'Panduan', href: '/panduan', icon: 'menu_book' }
           ].map((item) => {
-            const isActive = item.href === '/dashboard' 
+            const isActive = item.href === '/dashboard'
               ? (pathname === '/dashboard' || (pathname && pathname.startsWith('/product')))
               : (pathname === item.href || (pathname && pathname.startsWith(item.href)));
             return (
-              <Link 
-                key={item.href} 
-                href={item.href} 
+              <Link
+                key={item.href}
+                href={item.href}
                 className={`flex-1 flex flex-col items-center py-2.5 transition-colors relative ${
                   isActive ? 'text-[#fe802f]' : 'text-[#83a69c] opacity-80 hover:opacity-100'
                 }`}
               >
-                <span 
-                  className="material-symbols-outlined text-[20px]" 
+                <span
+                  className="material-symbols-outlined text-[20px]"
                   style={{ fontVariationSettings: isActive ? "'FILL' 1" : "'FILL' 0" }}
                 >
                   {item.icon}

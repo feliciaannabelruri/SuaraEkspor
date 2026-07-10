@@ -3,13 +3,17 @@ import { useState, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense } from 'react';
 import Link from 'next/link';
+import apiClient from '@/lib/api-client';
 
 function VerifyContent() {
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
   const router = useRouter();
   const params = useSearchParams();
   const phone = params.get('phone') ?? '';
+  const role = params.get('role') ?? 'seller';
 
   const handleChange = (index: number, value: string) => {
     if (value.length > 1) {
@@ -31,13 +35,24 @@ function VerifyContent() {
     }
   };
 
-  function handleVerify(e: React.FormEvent) {
+  async function handleVerify(e: React.FormEvent) {
     e.preventDefault();
     const otpValue = otp.join('');
-    if (otpValue === '123456') {
-      router.push('/dashboard');
-    } else {
-      alert('OTP salah. Gunakan 123456 untuk prototype.');
+    if (otpValue.length !== 6) {
+      setError('OTP harus 6 digit');
+      return;
+    }
+    setLoading(true);
+    setError('');
+    try {
+      const { data } = await apiClient.post('/auth/otp/verify', { phone, otp: otpValue });
+      localStorage.setItem('se_token', data.data.token);
+      localStorage.setItem('se_user', JSON.stringify(data.data.user));
+      router.push(role === 'seller' ? '/dashboard' : '/marketplace');
+    } catch (e: any) {
+      setError(e.response?.data?.error ?? 'OTP tidak valid');
+    } finally {
+      setLoading(false);
     }
   }
 
@@ -49,14 +64,14 @@ function VerifyContent() {
         <div
           className="absolute inset-0 batik-overlay mix-blend-soft-light opacity-30 pointer-events-none"
         ></div>
-        
+
         {/* Logo */}
         <div className="relative z-10 flex justify-center md:justify-start">
           <Link href="/">
-            <img 
-              src="/images/SuaraEksporLogo.png" 
-              alt="SuaraEkspor" 
-              className="w-36 md:w-48 h-auto brightness-0 invert object-contain hover:opacity-80 transition-opacity" 
+            <img
+              src="/images/SuaraEksporLogo.png"
+              alt="SuaraEkspor"
+              className="w-36 md:w-48 h-auto brightness-0 invert object-contain hover:opacity-80 transition-opacity"
             />
           </Link>
         </div>
@@ -92,7 +107,7 @@ function VerifyContent() {
       {/* Right Column: OTP Form */}
       <section className="w-full md:w-1/2 bg-white md:bg-surface-bright flex flex-col items-center justify-start md:justify-center p-6 md:p-16 -mt-8 md:mt-0 relative z-20 rounded-t-3xl md:rounded-none min-h-[60vh] md:min-h-0">
         <div className="w-full max-w-md bg-white md:p-8 rounded-none md:rounded-xl border-none md:border md:border-outline-variant/30 shadow-none md:shadow-sm">
-          <button 
+          <button
             type="button"
             onClick={() => router.back()}
             className="inline-flex items-center gap-2 text-primary font-semibold mb-6 hover:underline text-sm md:text-base mt-2 md:mt-0"
@@ -100,12 +115,12 @@ function VerifyContent() {
             <span className="material-symbols-outlined text-sm md:text-base">arrow_back</span>
             Ganti Nomor
           </button>
-          
+
           <h2 className="font-headline-sm md:text-headline-md text-primary mb-1 md:mb-2">Verifikasi Nomor Anda</h2>
           <p className="text-sm md:text-base text-on-surface-variant mb-6 md:mb-8">
-            Kode OTP telah dikirim ke <span className="font-bold text-on-surface">{phone || '+62 812-XXXX-XXXX'}</span> via WhatsApp
+            Kode verifikasi untuk <span className="font-bold text-on-surface">{phone || '+62 812-XXXX-XXXX'}</span> — mode demo, gunakan <span className="font-bold text-on-surface">123456</span>
           </p>
-          
+
           <form className="space-y-6 md:space-y-8" onSubmit={handleVerify}>
             {/* OTP Inputs */}
             <div className="flex justify-between gap-1 sm:gap-2 md:gap-4">
@@ -122,18 +137,21 @@ function VerifyContent() {
                 />
               ))}
             </div>
-            
+
+            {error && <p className="text-red-600 text-sm text-center">{error}</p>}
+
             <div className="text-center">
               <p className="text-on-surface-variant text-xs md:text-sm">
                 Kirim ulang kode dalam <span className="text-primary font-bold">45 detik</span>
               </p>
             </div>
-            
+
             <button
               type="submit"
-              className="w-full bg-secondary-container text-white py-3.5 md:py-4 rounded-lg font-bold text-base md:text-lg shadow-lg shadow-secondary-container/20 hover:opacity-90 active:scale-[0.98] transition-all"
+              disabled={loading}
+              className="w-full bg-secondary-container text-white py-3.5 md:py-4 rounded-lg font-bold text-base md:text-lg shadow-lg shadow-secondary-container/20 hover:opacity-90 active:scale-[0.98] transition-all disabled:opacity-50"
             >
-              Verifikasi &amp; Masuk
+              {loading ? 'Memverifikasi...' : 'Verifikasi & Masuk'}
             </button>
           </form>
 
@@ -144,7 +162,7 @@ function VerifyContent() {
               </svg>
             </div>
             <p className="text-xs md:text-sm text-on-surface-variant leading-tight">
-              Cek pesan WhatsApp Anda untuk melihat 6 digit kode verifikasi yang kami kirimkan.
+              Mode demo: pengiriman OTP via WhatsApp belum aktif (roadmap). Gunakan kode <strong>123456</strong> untuk melanjutkan.
             </p>
           </div>
         </div>

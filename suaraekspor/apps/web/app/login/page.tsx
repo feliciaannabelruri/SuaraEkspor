@@ -1,15 +1,39 @@
 'use client';
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
+import apiClient from '@/lib/api-client';
 
-export default function LoginPage() {
+function LoginContent() {
   const [phone, setPhone] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
   const router = useRouter();
+  const params = useSearchParams();
+  const role = params.get('role') ?? 'seller';
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    router.push(`/verify?phone=${phone}`);
+    if (!phone || phone.length < 8) {
+      setError('Masukkan nomor WhatsApp yang valid');
+      return;
+    }
+    setLoading(true);
+    setError('');
+    try {
+      const digits = phone.replace(/\s+/g, '');
+      const formattedPhone = digits.startsWith('0')
+        ? '+62' + digits.slice(1)
+        : digits.startsWith('+')
+        ? digits
+        : '+62' + digits;
+      await apiClient.post('/auth/otp/send', { phone: formattedPhone, role });
+      router.push(`/verify?phone=${encodeURIComponent(formattedPhone)}&role=${role}`);
+    } catch (e: any) {
+      setError(e.response?.data?.error ?? 'Terjadi kesalahan. Coba lagi.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -22,14 +46,14 @@ export default function LoginPage() {
             className="absolute inset-0 batik-overlay mix-blend-soft-light opacity-30 pointer-events-none"
             title="A sophisticated digital artwork featuring traditional Indonesian batik patterns with intricate floral and geometric motifs. The design uses warm amber and gold tones against a deep forest green background, creating a high-contrast, premium aesthetic. Soft ambient lighting highlights the texture, blending ancient heritage with modern digital precision."
           ></div>
-          
+
           {/* Logo */}
           <div className="relative z-10 flex justify-center md:justify-start">
             <Link href="/">
-              <img 
-                src="/images/SuaraEksporLogo.png" 
-                alt="SuaraEkspor" 
-                className="w-36 md:w-48 h-auto brightness-0 invert object-contain hover:opacity-80 transition-opacity" 
+              <img
+                src="/images/SuaraEksporLogo.png"
+                alt="SuaraEkspor"
+                className="w-36 md:w-48 h-auto brightness-0 invert object-contain hover:opacity-80 transition-opacity"
               />
             </Link>
           </div>
@@ -85,13 +109,15 @@ export default function LoginPage() {
                   />
                 </div>
               </div>
+              {error && <p className="text-red-600 text-sm">{error}</p>}
               <button
-                className="w-full py-3.5 md:py-4 bg-secondary-container text-white font-bold rounded-lg hover:brightness-110 active:scale-95 transition-all shadow-md text-sm md:text-base"
+                className="w-full py-3.5 md:py-4 bg-secondary-container text-white font-bold rounded-lg hover:brightness-110 active:scale-95 transition-all shadow-md text-sm md:text-base disabled:opacity-50"
                 type="submit"
+                disabled={loading}
               >
-                Kirim Kode OTP
+                {loading ? 'Mengirim...' : 'Kirim Kode OTP'}
               </button>
-              
+
               <div className="text-center text-gray-400 text-xs mt-2 mb-4">
                 Mode prototype — gunakan kode <strong>123456</strong>
               </div>
@@ -110,7 +136,7 @@ export default function LoginPage() {
               <div className="bg-surface-container-low p-3 md:p-4 rounded-lg flex items-start gap-3 mt-6 md:mt-8">
                 <span className="material-symbols-outlined text-primary text-[18px] md:text-[20px] mt-0.5">info</span>
                 <p className="text-[11px] md:text-[12px] leading-tight text-on-surface-variant">
-                  Kode OTP akan dikirim via WhatsApp dalam 60 detik. Pastikan nomor Anda aktif.
+                  Mode demo: verifikasi WhatsApp asli belum aktif. Gunakan kode <strong>123456</strong> di halaman berikutnya untuk masuk.
                 </p>
               </div>
             </form>
@@ -119,5 +145,13 @@ export default function LoginPage() {
       </main>
 
     </>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense>
+      <LoginContent />
+    </Suspense>
   );
 }

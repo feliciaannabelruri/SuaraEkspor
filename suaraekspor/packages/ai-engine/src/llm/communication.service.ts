@@ -1,7 +1,15 @@
-import OpenAI from 'openai';
+import { z } from 'zod';
 import type { CommunicationAgentResult } from '@suaraekspor/shared';
+import { chatJsonWithValidation } from '../util/json-llm';
+import { groq, GROQ_MODELS } from '../client';
 
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+const communicationResultSchema = z.object({
+  replyToBuyer: z.string(),
+  replyLanguage: z.string(),
+  summaryForSeller: z.string(),
+  summaryLanguage: z.string(),
+  summaryAudioUrl: z.string().optional(),
+}) satisfies z.ZodType<CommunicationAgentResult>;
 
 interface MessageContext {
   productTitle: string;
@@ -14,11 +22,11 @@ interface MessageContext {
 
 /**
  * AI Communication Agent — Inti dari SuaraEkspor.
- * 
+ *
  * Tugas:
  * 1. Membalas pesan buyer dalam bahasa buyer (profesional)
  * 2. Merangkum percakapan untuk penjual dalam bahasa daerahnya
- * 
+ *
  * Penjual tidak perlu tahu bahasa asing sama sekali.
  */
 export async function handleBuyerMessage(ctx: MessageContext): Promise<CommunicationAgentResult> {
@@ -54,20 +62,20 @@ Balas dalam format JSON:
   "summaryLanguage": "${ctx.sellerLanguage}"
 }`;
 
-  const response = await openai.chat.completions.create({
-    model: 'gpt-4o',
-    messages: [
-      { role: 'system', content: systemPrompt },
-      { role: 'user', content: userPrompt },
-    ],
-    max_tokens: 1200,
-    response_format: { type: 'json_object' },
-  });
-
-  const content = response.choices[0].message.content;
-  if (!content) throw new Error('LLM returned empty response for communication agent');
-
-  return JSON.parse(content) as CommunicationAgentResult;
+  return chatJsonWithValidation(
+    groq,
+    {
+      model: GROQ_MODELS.chatJson,
+      messages: [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: userPrompt },
+      ],
+      max_tokens: 1200,
+      response_format: { type: 'json_object' },
+    },
+    communicationResultSchema,
+    'AI communication agent',
+  );
 }
 
 function getLanguageName(code: string): string {

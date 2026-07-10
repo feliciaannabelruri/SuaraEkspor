@@ -1,7 +1,14 @@
-import OpenAI from 'openai';
+import { z } from 'zod';
 import type { VisionResult, PricingResult } from '@suaraekspor/shared';
+import { chatJsonWithValidation } from '../util/json-llm';
+import { groq, GROQ_MODELS } from '../client';
 
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+const pricingResultSchema = z.object({
+  recommendedPriceUsd: z.number(),
+  priceRangeUsd: z.object({ min: z.number(), max: z.number() }),
+  rationale: z.string(),
+  comparableProducts: z.array(z.string()),
+}) satisfies z.ZodType<PricingResult>;
 
 /**
  * Rekomendasi harga ekspor dalam USD berdasarkan analisis produk.
@@ -33,15 +40,15 @@ Jawab dalam format JSON:
   "comparableProducts": ["contoh produk serupa di pasar global sebagai referensi"]
 }`;
 
-  const response = await openai.chat.completions.create({
-    model: 'gpt-4o',
-    messages: [{ role: 'user', content: prompt }],
-    max_tokens: 600,
-    response_format: { type: 'json_object' },
-  });
-
-  const content = response.choices[0].message.content;
-  if (!content) throw new Error('LLM returned empty response for pricing');
-
-  return JSON.parse(content) as PricingResult;
+  return chatJsonWithValidation(
+    groq,
+    {
+      model: GROQ_MODELS.chatJson,
+      messages: [{ role: 'user', content: prompt }],
+      max_tokens: 600,
+      response_format: { type: 'json_object' },
+    },
+    pricingResultSchema,
+    'AI pricing recommendation',
+  );
 }

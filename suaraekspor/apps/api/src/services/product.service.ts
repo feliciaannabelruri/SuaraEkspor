@@ -5,7 +5,7 @@ import {
   generateMultilingualListing,
   recommendExportPrice,
 } from '@suaraekspor/ai-engine';
-import { uploadProductPhoto, uploadAudioFile } from './cloudinary.service';
+import { uploadProductPhoto, uploadAudioFile } from './imagekit.service';
 import fs from 'fs';
 
 /**
@@ -55,7 +55,7 @@ export async function runAIPipeline(
 
     // --- STAGE 3: Vision — Analisis foto produk ---
     await updatePipelineStage(productId, 'vision', 45);
-    const visionResult = await analyzeProductPhoto(photoUrls[0]);
+    const visionResult = await analyzeProductPhoto(photoUrls.slice(0, 3));
 
     await prisma.product.update({
       where: { id: productId },
@@ -82,11 +82,19 @@ export async function runAIPipeline(
       });
     }
 
+    const dataCompletenessScore = computeDataCompletenessScore({
+      photoCount: photoUrls.length,
+      hasTranscript: Boolean(sttResult?.transcript),
+      listingLanguages: listingResult.listings.map((l) => l.languageCode),
+      category: visionResult.estimatedCategory,
+    });
+
     await prisma.product.update({
       where: { id: productId },
       data: {
         targetMarkets: listingResult.targetMarkets,
         exportReadinessScore: listingResult.exportReadinessScore,
+        dataCompletenessScore,
       },
     });
 
@@ -108,9 +116,10 @@ export async function runAIPipeline(
     console.log(`[AI Pipeline] Product ${productId} processing complete.`);
   } catch (error) {
     console.error(`[AI Pipeline] Error for product ${productId}:`, error);
+    const message = error instanceof Error ? error.message : String(error);
     await prisma.product.update({
       where: { id: productId },
-      data: { aiPipelineStage: 'error', status: 'inactive' },
+      data: { aiPipelineStage: 'error', status: 'inactive', pipelineError: message.slice(0, 500) },
     });
   }
 }
@@ -120,4 +129,25 @@ async function updatePipelineStage(productId: string, stage: string, _progress: 
     where: { id: productId },
     data: { aiPipelineStage: stage },
   });
+}
+
+function computeDataCompletenessScore(input: {
+  photoCount: number;
+  hasTranscript: boolean;
+  listingLanguages: string[];
+  category: string;
+}): number {
+  let score = 0;
+  if (input.photoCount >= 2) score += 20;
+  if (input.hasTranscript) score += 15;
+
+  const trackedLanguages = ['id', 'en', 'zh'];
+  const presentTrackedLanguages = trackedLanguages.filter((lang) =>
+    input.listingLanguages.includes(lang),
+  );
+  score += Math.min(presentTrackedLanguages.length, 3) * 15;
+
+  if (input.category && input.category.trim().length > 0) score += 20;
+
+  return Math.max(0, Math.min(100, score));
 }

@@ -22,3 +22,12 @@ export function authMiddleware(req: AuthRequest, res: Response, next: NextFuncti
     return res.status(401).json({ success: false, error: 'Token tidak valid atau kadaluarsa' });
   }
 }
+
+export function requireRole(...roles: string[]) {
+  return (req: AuthRequest, res: Response, next: NextFunction) => {
+    if (!req.userRole || !roles.includes(req.userRole)) {
+      return res.status(403).json({ success: false, error: 'Tidak diizinkan untuk peran ini' });
+    }
+    next();
+  };
+}

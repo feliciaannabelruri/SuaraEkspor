@@ -1,8 +1,21 @@
-import OpenAI from 'openai';
+import { z } from 'zod';
 import type { STTResult, VisionResult, ListingGenerationResult } from '@suaraekspor/shared';
-import { TARGET_BUYER_LANGUAGES } from '@suaraekspor/shared';
+import { chatJsonWithValidation } from '../util/json-llm';
+import { groq, GROQ_MODELS } from '../client';
 
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+const listingGenerationSchema = z.object({
+  listings: z.array(
+    z.object({
+      languageCode: z.string(),
+      languageName: z.string(),
+      title: z.string(),
+      description: z.string(),
+      keywords: z.array(z.string()),
+    }),
+  ),
+  targetMarkets: z.array(z.string()),
+  exportReadinessScore: z.number(),
+}) satisfies z.ZodType<ListingGenerationResult>;
 
 /**
  * Menghasilkan listing produk multibahasa dari hasil STT + Vision.
@@ -47,18 +60,18 @@ Format JSON yang diinginkan:
 
 exportReadinessScore: 0-100, nilai kesiapan produk ini untuk ekspor.`;
 
-  const response = await openai.chat.completions.create({
-    model: 'gpt-4o',
-    messages: [
-      { role: 'system', content: systemPrompt },
-      { role: 'user', content: userPrompt },
-    ],
-    max_tokens: 3000,
-    response_format: { type: 'json_object' },
-  });
-
-  const content = response.choices[0].message.content;
-  if (!content) throw new Error('LLM returned empty response for listing generation');
-
-  return JSON.parse(content) as ListingGenerationResult;
+  return chatJsonWithValidation(
+    groq,
+    {
+      model: GROQ_MODELS.chatJson,
+      messages: [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: userPrompt },
+      ],
+      max_tokens: 3000,
+      response_format: { type: 'json_object' },
+    },
+    listingGenerationSchema,
+    'AI listing generation',
+  );
 }

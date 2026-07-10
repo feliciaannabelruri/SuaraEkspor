@@ -1,28 +1,59 @@
 'use client';
-import { useState, useMemo, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import Navbar from '../../components/layout/Navbar';
 import Footer from '../../components/layout/Footer';
+import apiClient from '../../lib/api-client';
 
-const ALL_PRODUCTS = [
-  { id: '1', title: 'Handwoven Rattan Bag', location: 'Pengrajin Bali', province: 'Bali', price: 42.00, category: 'KERAJINAN TANGAN', exportReady: true, langs: ['EN', 'ZH', 'AR'], added: '2024-01-10', popularity: 95, image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBiB8MGKxrm_v_wknhfwq_eNKONy8ObGnve3tcSrbGYKdvNNAulNSDYtHA6UMulOSqr_iYwlNZjL0PojIiUEbPaq1xls_KhtWUyyRLVuShmMMQ3Nwq77Ooy8I74KebuUps5i-AIn8gWg9InHqfdcq7PDaHabUg--HnOilCjUL8ukv6btNX8GSgO2nzdTzq6aGBYPggB0Yd9NWHtvsHReE03tUk7ScAAHjgcP5Amg_B9OP25gEXgJaUjlC320KH7I9ILNIDwjFgmNmsb' },
-  { id: '2', title: 'Hand-Drawn Batik Silk', location: 'Pengrajin Solo', province: 'Jawa Tengah', price: 125.00, category: 'TEKSTIL & BATIK', exportReady: false, langs: ['EN', 'DE'], added: '2024-03-22', popularity: 60, image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBprBrBBXUODnTs-brrmKPjKEIs71jWImBarFEwZAu_52Lsobc1tVIxXDbYHb0jaOgwvESRy06v-Pnh5aKTGeJsoAGM2TEJCl0bx4WdEzj2vV7AuxMJ55arUIrD__k1NCir8150urEh_d7oqOKobfcHPQJQcB44meM7Yh1iq7Lnm-GE93S8HI1oc26ojY5i7RlBzSm5oq7R5fYs7jUpFZbClDJcusHannVcPYClgZeKApJTGoxhoUiMeo5ft-uLLSPcloMefM4BWD1J' },
-  { id: '3', title: 'Single Origin Arabica', location: 'Petani Aceh', province: 'Aceh', price: 28.00, category: 'KOPI & TEH', exportReady: true, langs: ['EN', 'JA'], added: '2024-05-01', popularity: 80, image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCcM6oTXx3DAQ-M18BhYaSoMa9iQWDoqQW9NEzD5K2Txb9aLytHmGL88fukOpOpFpVydugE60AhhqRB8pqhNJ8pylPKvlmD6kE9auxDt8_EBeFk51hB1kjAStxhk5Imgd3H-PeaINzXfua7MrW0R33JlEjrg8yjBGGM5J_2Ufx9bzldrxUmsjC7_j0uLkJxG7mmaL6gZduovcnBMMzcmshEZXMfgYLKLkG51pRgrEI6KHKwelGUjkZpY4O8JSro26fyBXitaD5tS8Po' },
-  { id: '4', title: 'Bamboo Zen Lampshade', location: 'Pengrajin Yogyakarta', province: 'D.I. Yogyakarta', price: 55.00, category: 'FURNITUR', exportReady: false, langs: ['EN', 'DE'], added: '2024-02-15', popularity: 45, image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDkrk74WEWxjXWfuui04KjqsBS_CGLA3dgJL4ZtOO2EbiJQyE7PRaBYsEZDggaiLcbButTKofvRO5533N8t_KF22QzNwcwWs3Ssqp5w7EgzqahK8SJW_IUzCbKqdiMQmuxUJnhBxQkgeuepuYXolxi72Q8zKVO9kG9nKvNbuYl7dfap0D2G6TbdHdcz5AJPptWJajoBHHYHI8NWJXJDsIkOWV4HYU2gHuGNdAoJYYpsyvRjbQU77cvrpAjscg-W7k5EDlPPdVbINZYn' },
-  { id: '5', title: 'Tenun Ikat Sumba', location: 'Penenun NTT', province: 'Nusa Tenggara Timur', price: 89.00, category: 'TEKSTIL & BATIK', exportReady: true, langs: ['EN', 'ZH'], added: '2024-04-08', popularity: 72, image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBGq48dm5NPUvIc_bm1kWULANlu30X7yJsnHol4zTv1x4mXsH-LAPCVwRcTUQs-CuKivm6qE-VRDiSv8uvo5supl3JVy70zYoBTEak3KDS3JP0omZ0CA8a8Y_mbsh_qiEcRa0XYZ4NkuK1F1LI4XAn067HomkuoJ6Hdpl1hquhUBzdMU88DYg7dkuav_YVz_UOH4HbB-iFhyrHBlPpEfla0KAY9aZrN_g0mciw_VehJWzgL0QTaPEFSxtw5jLE90t2XWoz__E-F97s6' },
-  { id: '6', title: 'Organic Virgin Coconut Oil', location: 'Petani Sulawesi', province: 'Sulawesi Tengah', price: 18.00, category: 'KOSMETIK NATURAL', exportReady: false, langs: ['EN', 'ZH', 'AR'], added: '2024-06-12', popularity: 88, image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBMl2Ysv8iD2TiD94wJ4ImRdUZwOpzhxb5CsZ6QGMc9thQNcq6UGoZN5BQG9P85D54qABA_bXsxN1WiJW8Xy4mCRUow9e5pc-p7HKkY_fiMZytOFfb5RGpd66-xT_1GEaTHBDfieo7iyWiBzWaa7GWTC2Cumf4am4gTpaAI-NiBXXcw6aMngIrGOhb0uTa3_0tEThJeLpC1Wz9pu9h5M-L5z5ko_MugHCy2t2Yz2h8ewhPStuXz60TmErTEqRppjDDiCaTc-DaUu_dr' },
-  { id: '7', title: 'Wayang Kulit Wall Art', location: 'Pengrajin Jawa', province: 'Jawa Tengah', price: 210.00, category: 'KERAJINAN TANGAN', exportReady: true, langs: ['EN', 'ZH'], added: '2024-01-25', popularity: 55, image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuD0116unN5GcDIGwcPjo-8Hq5-F7y9gBHY5OFtNlHJyRex84ZU8IL0uy13XU_JTQPhJRqgpvUeJzSWgHYqkoMlFlBn2-_5zfPIhScdZmb627iMpjTJVjSaG7OUnpL8QjN11t1y7kUXfAV4usfo5tgtlC4HLt7NV2-U81nUVaV7kFUVLEG6W6pzcKTwrU3CWpEsJ8DCtR6IqRQej7p7fHdLJxlXWjpds3PDV_vPvHXc5MZCerPKf9l33mT9weWieOCUC9acwCt40rZ_W' },
-  { id: '8', title: 'Batik Tulis Premium', location: 'Pengrajin Pekalongan', province: 'Jawa Tengah', price: 95.00, category: 'TEKSTIL & BATIK', exportReady: true, langs: ['EN', 'DE', 'JA'], added: '2024-03-05', popularity: 91, image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAm1rmy2wRqElvx-tI6arxloke-i3IBxDqWv9QN5VI6Kc2OFOkwTo3-C3xRu06mxGzM2QsfQTaTNIcKIPLAV3_9woNWQ3_Xj9xCEAyHz_pSsyYNILiPgd8QCx5ixJvQ8Bh0qLaV8nh4gZ5ioWAMindMQXEIbm2c3jEM7Off-zEfhtUWyPp2qS0E4DRSFaEfqzulb4NRBYeeFccu8x-Q2uA8IigIe5s6SylzeAHnIZZWx-NOHZWBHgQQUGN4qOOmOzeDijm8rgxuFxdt' },
-];
+interface ApiProduct {
+  id: string;
+  status: string;
+  photoUrls: string[];
+  recommendedPriceUsd?: number | null;
+  priceRangeMin?: number | null;
+  priceRangeMax?: number | null;
+  category?: string | null;
+  exportReadinessScore?: number | null;
+  createdAt: string;
+  listings: { languageCode: string; languageName: string; title: string; description: string; keywords: string[] }[];
+  seller?: { name?: string | null; province?: string | null; businessName?: string | null } | null;
+}
+
+interface UiProduct {
+  id: string;
+  title: string;
+  location: string;
+  province: string;
+  price: number;
+  category: string;
+  exportReady: boolean;
+  langs: string[];
+  added: string;
+  image: string | null;
+}
+
+function mapProduct(p: ApiProduct): UiProduct {
+  return {
+    id: p.id,
+    title: p.listings?.[0]?.title || 'Produk Tanpa Judul',
+    location: p.seller?.businessName || p.seller?.name || p.seller?.province || '-',
+    province: p.seller?.province || '-',
+    price: p.recommendedPriceUsd ?? 0,
+    category: p.category || 'Lainnya',
+    exportReady: (p.exportReadinessScore ?? 0) >= 70,
+    langs: (p.listings || []).map(l => l.languageCode.toUpperCase()),
+    added: p.createdAt,
+    image: p.photoUrls?.[0] || null,
+  };
+}
 
 const CATEGORY_MAP: Record<string, string> = {
   'Semua': '',
-  'Kerajinan Tangan': 'KERAJINAN TANGAN',
-  'Tekstil & Batik': 'TEKSTIL & BATIK',
-  'Kopi & Teh': 'KOPI & TEH',
-  'Furnitur': 'FURNITUR',
-  'Makanan & Minuman': 'MAKANAN & MINUMAN',
-  'Kosmetik Natural': 'KOSMETIK NATURAL',
+  'Batik & Tekstil': 'batik & tekstil',
+  'Kerajinan Tangan': 'kerajinan tangan',
+  'Furnitur & Dekor': 'furnitur & dekor',
+  'Kopi & Rempah': 'kopi & rempah',
+  'Kosmetik Natural': 'kosmetik natural',
 };
 
 // All 38 Indonesian provinces
@@ -40,8 +71,15 @@ const ALL_PROVINCES = [
   'Sulawesi Utara', 'Sumatera Barat', 'Sumatera Selatan', 'Sumatera Utara',
 ];
 
-const LANG_CODES = ['EN', 'ZH', 'AR', 'JA', 'DE'];
+const LANG_CODES = ['EN', 'ZH', 'AR', 'JA', 'DE', 'ID'];
 const ITEMS_PER_PAGE = 8;
+
+const SORT_MAP: Record<string, string> = {
+  'Terpopuler': 'export_ready',
+  'Terbaru': 'newest',
+  'Harga Terendah': 'price_asc',
+  'Harga Tertinggi': 'price_desc',
+};
 
 interface FilterState {
   category: string;
@@ -76,6 +114,12 @@ export default function MarketplacePage() {
   const [mobileFilterOpen, setMobileFilterOpen] = useState(false);
   const provinceRef = useRef<HTMLDivElement>(null);
 
+  const [products, setProducts] = useState<UiProduct[]>([]);
+  const [total, setTotal] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
+
   // Close province dropdown when clicking outside
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -86,6 +130,50 @@ export default function MarketplacePage() {
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function fetchProducts() {
+      setLoading(true);
+      setLoadError(null);
+      try {
+        const params: Record<string, string | number> = {
+          lang: applied.lang ? applied.lang.toLowerCase() : 'en',
+          page: currentPage,
+          limit: ITEMS_PER_PAGE,
+          sort: SORT_MAP[sortMode] || 'newest',
+        };
+        const catFilter = CATEGORY_MAP[applied.category];
+        if (catFilter) params.category = catFilter;
+        if (applied.province !== 'Semua Provinsi') params.province = applied.province;
+        if (applied.minPrice) params.minPrice = applied.minPrice;
+        if (applied.maxPrice) params.maxPrice = applied.maxPrice;
+        if (applied.exportReady && !applied.inProgress) params.exportReady = 'true';
+        if (applied.inProgress && !applied.exportReady) params.exportReady = 'false';
+
+        const res = await apiClient.get('/marketplace', { params });
+        if (cancelled) return;
+        let data: ApiProduct[] = res.data?.data || [];
+        if (applied.lang) {
+          data = data.filter(p => p.listings && p.listings.length > 0);
+        }
+        setProducts(data.map(mapProduct));
+        setTotal(res.data?.pagination?.total ?? data.length);
+        setTotalPages(res.data?.pagination?.totalPages ?? 1);
+      } catch (err) {
+        if (!cancelled) {
+          setLoadError('Gagal memuat produk. Silakan coba lagi.');
+          setProducts([]);
+          setTotal(0);
+          setTotalPages(1);
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+    fetchProducts();
+    return () => { cancelled = true; };
+  }, [applied, sortMode, currentPage]);
 
   function toggleFavorite(id: string) {
     setFavorites(prev => {
@@ -117,47 +205,7 @@ export default function MarketplacePage() {
 
   const hasPendingChanges = JSON.stringify(pending) !== JSON.stringify(applied);
 
-  // ── Filtered + sorted ──
-  const filteredProducts = useMemo(() => {
-    let list = [...ALL_PRODUCTS];
-
-    // Category
-    const catFilter = CATEGORY_MAP[applied.category];
-    if (catFilter) list = list.filter(p => p.category === catFilter);
-
-    // Language
-    if (applied.lang) list = list.filter(p => p.langs.includes(applied.lang!));
-
-    // Province
-    if (applied.province !== 'Semua Provinsi') {
-      list = list.filter(p => p.province === applied.province);
-    }
-
-    // Price min
-    const minVal = parseFloat(applied.minPrice);
-    if (!isNaN(minVal)) list = list.filter(p => p.price >= minVal);
-
-    // Price max
-    const maxVal = parseFloat(applied.maxPrice);
-    if (!isNaN(maxVal)) list = list.filter(p => p.price <= maxVal);
-
-    // Export readiness
-    if (applied.exportReady && !applied.inProgress) list = list.filter(p => p.exportReady);
-    if (applied.inProgress && !applied.exportReady) list = list.filter(p => !p.exportReady);
-
-    // Sort
-    switch (sortMode) {
-      case 'Terbaru':        list.sort((a, b) => new Date(b.added).getTime() - new Date(a.added).getTime()); break;
-      case 'Harga Terendah': list.sort((a, b) => a.price - b.price); break;
-      case 'Harga Tertinggi': list.sort((a, b) => b.price - a.price); break;
-      default:               list.sort((a, b) => b.popularity - a.popularity);
-    }
-    return list;
-  }, [applied, sortMode]);
-
-  // ── Pagination ──
-  const totalPages = Math.max(1, Math.ceil(filteredProducts.length / ITEMS_PER_PAGE));
-  const pagedProducts = filteredProducts.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
+  const pagedProducts = products;
 
   function getPageNumbers(): (number | '...')[] {
     if (totalPages <= 1) return [];
@@ -346,7 +394,7 @@ export default function MarketplacePage() {
           {/* Top Bar */}
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
             <div className="flex items-baseline gap-2">
-              <span className="text-[24px] font-bold text-[#01261f]">{filteredProducts.length}</span>
+              <span className="text-[24px] font-bold text-[#01261f]">{total}</span>
               <span className="text-[#414846] font-medium">Produk Ditemukan</span>
             </div>
             <div className="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-end">
@@ -403,8 +451,24 @@ export default function MarketplacePage() {
             </div>
           )}
 
+          {/* Loading State */}
+          {loading && (
+            <div className="flex flex-col items-center justify-center py-24 gap-4 text-[#414846]">
+              <div className="w-10 h-10 border-4 border-[#c1c8c4] border-t-[#1a3c34] rounded-full animate-spin" />
+              <p className="text-sm">Memuat produk...</p>
+            </div>
+          )}
+
+          {/* Error State */}
+          {!loading && loadError && (
+            <div className="flex flex-col items-center justify-center py-24 gap-4 text-[#414846]">
+              <span className="material-symbols-outlined text-6xl text-[#c1c8c4]">error</span>
+              <p className="text-lg font-semibold">{loadError}</p>
+            </div>
+          )}
+
           {/* Empty State */}
-          {filteredProducts.length === 0 && (
+          {!loading && !loadError && pagedProducts.length === 0 && (
             <div className="flex flex-col items-center justify-center py-24 gap-4 text-[#414846]">
               <span className="material-symbols-outlined text-6xl text-[#c1c8c4]">inventory_2</span>
               <p className="text-lg font-semibold">Tidak ada produk ditemukan</p>
@@ -416,7 +480,7 @@ export default function MarketplacePage() {
           )}
 
           {/* Product Grid */}
-          {pagedProducts.length > 0 && (
+          {!loading && !loadError && pagedProducts.length > 0 && (
             <div className="grid grid-cols-2 sm:grid-cols-2 xl:grid-cols-4 gap-4 md:gap-6">
               {pagedProducts.map((p) => (
                 <Link
@@ -425,8 +489,14 @@ export default function MarketplacePage() {
                   className="bg-white rounded-xl border border-[#c1c8c4] p-3 hover:border-[#1a3c34] hover:-translate-y-1 transition-all duration-300 relative group block"
                   style={{ boxShadow: '0 4px 20px -2px rgba(26, 60, 52, 0.05)' }}
                 >
-                  <div className="relative overflow-hidden rounded-lg mb-4 aspect-square">
-                    <img src={p.image} alt={p.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                  <div className="relative overflow-hidden rounded-lg mb-4 aspect-square bg-[#f0eded]">
+                    {p.image ? (
+                      <img src={p.image} alt={p.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-[#c1c8c4]">
+                        <span className="material-symbols-outlined text-5xl">image</span>
+                      </div>
+                    )}
                     {/* Badges — stacked vertically at top-left to avoid overlap */}
                     <div className="absolute top-1.5 left-1.5 flex flex-col gap-1">
                       <span className="bg-[#1a3c34]/90 text-white text-[8px] font-bold px-1.5 py-0.5 rounded self-start tracking-wide">{p.category}</span>
