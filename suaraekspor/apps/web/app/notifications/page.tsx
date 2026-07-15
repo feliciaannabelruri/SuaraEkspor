@@ -1,91 +1,91 @@
 'use client';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
 import { useMiddleman } from "../context/middleman-context";
 import Sidebar from '../../components/layout/Sidebar';
 import MobileProfileMenu from '../../components/layout/MobileProfileMenu';
+import LoadingSpinner from '../../components/ui/LoadingSpinner';
+import EmptyState from '../../components/ui/EmptyState';
+import apiClient from '@/lib/api-client';
 
-interface Notification {
-  id: number;
-  buyerName: string;
-  buyerCountry: string;
-  product: string;
-  summary: string;
-  summaryLang: string;
-  time: string;
-  read: boolean;
-  conversationId: string;
-  audioDuration: string;
+interface ApiNotification {
+  id: string;
+  type: string;
+  title: string;
+  message: string;
+  conversationId: string | null;
+  audioUrl: string | null;
+  isRead: boolean;
+  createdAt: string;
 }
 
-const NOTIFICATIONS: Notification[] = [
-  {
-    id: 1,
-    buyerName: 'John Smith',
-    buyerCountry: 'USA 🇺🇸',
-    product: 'Batik Tulis Pekalongan',
-    summary: 'John soko Amerika mau pesan 5 lembar batik. Tawaro harga $200, kita counter $210. Saiki nunggu konfirmasi soko John.',
-    summaryLang: 'Bahasa Jawa',
-    time: 'Tadi, 10:45',
-    read: false,
-    conversationId: '1',
-    audioDuration: '18 detik',
-  },
-  {
-    id: 2,
-    buyerName: 'Tanaka Hiroshi',
-    buyerCountry: 'Japan 🇯🇵',
-    product: 'Kopi Arabika Toraja',
-    summary: 'Tanaka ti Jepang menta kopi 10 kg pikeun order grosir. Nanya ngeunaan sertifikat organik jeung kualitas ekspor. Perlu dikirim dokumen sertifikasi.',
-    summaryLang: 'Bahasa Sunda',
-    time: '1 jam lalu',
-    read: false,
-    conversationId: '2',
-    audioDuration: '22 detik',
-  },
-  {
-    id: 3,
-    buyerName: 'Sarah Mueller',
-    buyerCountry: 'Germany 🇩🇪',
-    product: 'Batik Tulis Pekalongan',
-    summary: 'Mbak Sarah sampun nampi kiriman batik soko sasi wingi. Dheweke matur nuwun amarga kualitase apik banget lan pengen pesen meneh sasi ngarep.',
-    summaryLang: 'Bahasa Jawa',
-    time: 'Kemarin, 14:20',
-    read: true,
-    conversationId: '3',
-    audioDuration: '25 detik',
-  },
-  {
-    id: 4,
-    buyerName: 'Ahmed Al-Rashid',
-    buyerCountry: 'UAE 🇦🇪',
-    product: 'Kerajinan Rotan',
-    summary: 'Ahmed dari Dubai mau order furniture rotan besar untuk hotel baru. Minta katalog lengkap dan harga grosir minimum 50 set. Peluang besar! Perlu follow up segera.',
-    summaryLang: 'Bahasa Indonesia',
-    time: 'Kemarin, 09:15',
-    read: true,
-    conversationId: '4',
-    audioDuration: '30 detik',
-  },
-];
+interface Notification {
+  id: string;
+  buyerName: string;
+  product: string;
+  summary: string;
+  time: string;
+  read: boolean;
+  conversationId: string | null;
+  audioUrl: string | null;
+}
+
+function toViewModel(n: ApiNotification): Notification {
+  return {
+    id: n.id,
+    buyerName: n.title,
+    product: n.type === 'new_order' ? 'Pesanan Baru' : 'Pesan Baru',
+    summary: n.message,
+    time: new Date(n.createdAt).toLocaleString('id-ID', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }),
+    read: n.isRead,
+    conversationId: n.conversationId,
+    audioUrl: n.audioUrl,
+  };
+}
 
 export default function NotificationsPage() {
   const router = useRouter();
   const pathname = usePathname();
   const { isMiddleman, handleToggleMiddleman, activeUMKM } = useMiddleman();
-  const [playingId, setPlayingId] = useState<number | null>(null);
-  const [notifications, setNotifications] = useState(NOTIFICATIONS);
+  const [playingId, setPlayingId] = useState<string | null>(null);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  function playAudio(id: number) {
+  useEffect(() => {
+    let cancelled = false;
+    apiClient.get('/notifications')
+      .then((res) => {
+        if (cancelled) return;
+        const data: ApiNotification[] = res.data?.data ?? [];
+        setNotifications(data.map(toViewModel));
+      })
+      .catch(() => {})
+      .finally(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
+  }, []);
+
+  function playAudio(id: string) {
     setPlayingId(id);
-    // Mark as read
     setNotifications(prev =>
       prev.map(n => n.id === id ? { ...n, read: true } : n)
     );
+    apiClient.patch(`/notifications/${id}/read`).catch(() => {});
+
     const notif = notifications.find(n => n.id === id);
-    const durationMs = parseInt(notif?.audioDuration ?? '20') * 1000;
-    setTimeout(() => setPlayingId(null), durationMs);
+    if (notif?.audioUrl) {
+      const audio = new Audio(notif.audioUrl);
+      audio.play().catch(() => {});
+      audio.onended = () => setPlayingId(null);
+      audio.onerror = () => setPlayingId(null);
+    } else {
+      setTimeout(() => setPlayingId(null), 4000);
+    }
+  }
+
+  function markRead(id: string) {
+    setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
+    apiClient.patch(`/notifications/${id}/read`).catch(() => {});
   }
 
   const unreadCount = notifications.filter(n => !n.read).length;
@@ -139,6 +139,17 @@ export default function NotificationsPage() {
           </div>
 
           {/* NOTIFICATIONS LIST */}
+          {loading ? (
+            <div className="bg-white rounded-xl border border-gray-200 p-10">
+              <LoadingSpinner label="Memuat notifikasi..." />
+            </div>
+          ) : notifications.length === 0 ? (
+            <EmptyState
+              icon="notifications_off"
+              title="Belum ada notifikasi"
+              description="Notifikasi akan muncul saat ada pesan atau pesanan baru dari buyer."
+            />
+          ) : (
           <div className="space-y-4">
             {notifications.map(notif => (
               <div key={notif.id} className={`bg-white rounded-xl ${!notif.read ? 'border-l-[6px] border-primary shadow-sm hover:shadow-md border-outline-variant/30' : 'border border-outline-variant/30 opacity-60 grayscale-[0.3]'} p-4 md:p-5 transition-all`}>
@@ -151,9 +162,8 @@ export default function NotificationsPage() {
                     <div>
                       <h3 className="text-lg font-bold text-primary flex items-center gap-1.5">
                         {notif.buyerName}
-                        <span className="text-sm text-gray-600 font-normal">({notif.buyerCountry.replace(/[^A-Za-z\s]/g, '').trim()})</span>
                       </h3>
-                      <p className="text-[10px] font-bold text-secondary uppercase tracking-widest mt-0.5">Produk: {notif.product}</p>
+                      <p className="text-[10px] font-bold text-secondary uppercase tracking-widest mt-0.5">{notif.product}</p>
                     </div>
                   </div>
                   <span className="text-gray-600 text-xs">{notif.time}</span>
@@ -162,12 +172,14 @@ export default function NotificationsPage() {
                 {/* AI Summary Box */}
                 <div className={`${!notif.read ? 'bg-secondary-fixed/40 border-secondary-fixed' : 'bg-surface-container-low border-outline-variant'} p-4 rounded-lg mb-4 border`}>
                   <div className="flex justify-between items-center mb-2">
-                    <span className={`text-[10px] font-bold ${!notif.read ? 'text-on-secondary-fixed' : 'text-gray-600'} uppercase tracking-widest`}>RINGKASAN {notif.summaryLang.toUpperCase()}</span>
-                    
-                    <button onClick={() => playAudio(notif.id)} disabled={notif.read && playingId !== notif.id} className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold transition-transform ${playingId === notif.id ? 'bg-primary text-white scale-105' : (!notif.read ? 'bg-primary text-white hover:scale-105' : 'bg-gray-300 text-gray-500 cursor-not-allowed opacity-60')}`}>
-                      <span className="material-symbols-outlined text-[14px]" style={{ fontVariationSettings: "'FILL' 1" }}>volume_up</span>
-                      Dengar
-                    </button>
+                    <span className={`text-[10px] font-bold ${!notif.read ? 'text-on-secondary-fixed' : 'text-gray-600'} uppercase tracking-widest`}>RINGKASAN</span>
+
+                    {notif.audioUrl && (
+                      <button onClick={() => playAudio(notif.id)} disabled={notif.read && playingId !== notif.id} className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold transition-transform ${playingId === notif.id ? 'bg-primary text-white scale-105' : (!notif.read ? 'bg-primary text-white hover:scale-105' : 'bg-gray-300 text-gray-500 cursor-not-allowed opacity-60')}`}>
+                        <span className="material-symbols-outlined text-[14px]" style={{ fontVariationSettings: "'FILL' 1" }}>volume_up</span>
+                        Dengar
+                      </button>
+                    )}
                   </div>
 
                   {/* Audio wave visualization when playing */}
@@ -190,13 +202,13 @@ export default function NotificationsPage() {
 
                 {/* Actions */}
                 <div className="flex gap-2">
-                  <button onClick={() => router.push(`/conversations/${notif.conversationId}`)} className={`px-4 py-2 rounded-lg font-bold transition-all flex items-center justify-center gap-1.5 text-sm ${!notif.read ? 'bg-primary text-white hover:brightness-110' : 'bg-transparent border border-[#717976] text-gray-600 hover:bg-gray-100'}`}>
-                    Lihat {notif.read ? 'Riwayat' : 'Percakapan'}
-                  </button>
+                  {notif.conversationId && (
+                    <button onClick={() => router.push(`/conversations/${notif.conversationId}`)} className={`px-4 py-2 rounded-lg font-bold transition-all flex items-center justify-center gap-1.5 text-sm ${!notif.read ? 'bg-primary text-white hover:brightness-110' : 'bg-transparent border border-[#717976] text-gray-600 hover:bg-gray-100'}`}>
+                      Lihat {notif.read ? 'Riwayat' : 'Percakapan'}
+                    </button>
+                  )}
                   {!notif.read && (
-                    <button onClick={() => {
-                        setNotifications(prev => prev.map(n => n.id === notif.id ? { ...n, read: true } : n));
-                      }} className="bg-white border border-[#717976] text-gray-600 px-4 py-2 rounded-lg font-bold hover:bg-gray-50 transition-all text-sm">
+                    <button onClick={() => markRead(notif.id)} className="bg-white border border-[#717976] text-gray-600 px-4 py-2 rounded-lg font-bold hover:bg-gray-50 transition-all text-sm">
                       Tandai Dibaca
                     </button>
                   )}
@@ -204,14 +216,7 @@ export default function NotificationsPage() {
               </div>
             ))}
           </div>
-
-          {/* Load More Hint */}
-          <div className="mt-12 flex justify-center">
-            <button className="text-primary font-bold flex items-center gap-2 hover:underline">
-              Lihat notifikasi terdahulu
-              <span className="material-symbols-outlined">expand_more</span>
-            </button>
-          </div>
+          )}
 
         </div>
 

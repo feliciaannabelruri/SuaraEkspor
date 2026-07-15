@@ -33,6 +33,15 @@ export async function createTransaction(req: AuthRequest, res: Response) {
     },
   });
 
+  await prisma.notification.create({
+    data: {
+      userId: product.sellerId,
+      type: 'new_order',
+      title: 'Pesanan baru masuk',
+      message: `Ada pesanan baru sebanyak ${quantity} unit senilai $${transaction.totalUsd.toFixed(2)}.`,
+    },
+  }).catch((err: Error) => console.error('Failed to create notification:', err));
+
   return res.status(201).json({ success: true, data: transaction });
 }
 

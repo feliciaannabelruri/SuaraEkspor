@@ -30,6 +30,7 @@ interface Product {
   category?: string;
   exportReadinessScore?: number;
   aiPipelineStage?: string;
+  viewCount?: number;
   listings: Listing[];
   createdAt: string;
 }
@@ -323,9 +324,9 @@ export default function DashboardPage() {
 
   const newMessagesCount = conversations.length;
 
-  // 1. Total View (dinamis berdasarkan produk)
-  const totalViews = products.length * 148 + conversations.length * 92;
-  const viewChangePct = products.length > 0 ? "+15%" : "+0%";
+  // 1. Total View (data asli dari kunjungan halaman produk buyer)
+  const totalViews = products.reduce((acc, p) => acc + (p.viewCount ?? 0), 0);
+  const viewChangePct = totalViews > 0 ? "+15%" : "+0%";
 
   // 2. Negosiasi Aktif (sesuai jumlah utas chat)
   const activeNegotiations = conversations.length;

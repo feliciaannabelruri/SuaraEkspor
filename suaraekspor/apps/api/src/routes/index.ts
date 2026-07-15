@@ -6,6 +6,7 @@ import conversationRoutes from './conversation.routes';
 import transactionRoutes from './transaction.routes';
 import userRoutes from './user.routes';
 import middlemanRoutes from './middleman.routes';
+import notificationRoutes from './notification.routes';
 
 const router = Router();
 
@@ -16,6 +17,7 @@ router.use('/conversations', conversationRoutes);
 router.use('/transactions', transactionRoutes);
 router.use('/users', userRoutes);
 router.use('/middleman', middlemanRoutes);
+router.use('/notifications', notificationRoutes);
 
 router.get('/health', (_req, res) => {
   res.json({ status: 'ok', service: 'SuaraEkspor API', version: '1.0.0' });

@@ -27,6 +27,7 @@ model User {
   otpTokens     OtpToken[]
   sellerTxns    Transaction[]  @relation("SellerTransactions")
   buyerTxns     Transaction[]  @relation("BuyerTransactions")
+  notifications Notification[]
   // Middleman relations
   managedSellers MiddlemanRelation[] @relation("AsMiddleman")
   managedBy      MiddlemanRelation[] @relation("AsSeller")
@@ -67,6 +68,7 @@ model Product {
   dataCompletenessScore Int?
   aiPipelineStage      String?        @default("pending")
   pipelineError        String?
+  viewCount            Int            @default(0)
   createdAt            DateTime       @default(now())
   updatedAt            DateTime       @updatedAt
 
@@ -174,4 +176,22 @@ enum MiddlemanStatus {
   PENDING
   APPROVED
   REJECTED
+}
+
+// ─── Notifications ────────────────────────────────────────────────────────
+
+model Notification {
+  id             String   @id @default(cuid())
+  userId         String
+  type           String
+  title          String
+  message        String   @db.Text
+  conversationId String?
+  audioUrl       String?
+  isRead         Boolean  @default(false)
+  createdAt      DateTime @default(now())
+
+  user           User     @relation(fields: [userId], references: [id])
+
+  @@index([userId, isRead])
 }

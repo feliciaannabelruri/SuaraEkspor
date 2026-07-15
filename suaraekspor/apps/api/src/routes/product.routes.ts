@@ -8,6 +8,7 @@ import {
   listSellerProducts,
   deleteProduct,
   updateProduct,
+  trackProductView,
 } from '../controllers/product.controller';
 import multer from 'multer';
 
@@ -21,6 +22,7 @@ router.post('/', authMiddleware, requireRole('seller'), uploadFields, createProd
 router.get('/', authMiddleware, listSellerProducts);
 router.get('/:id', getProduct);
 router.get('/:id/status', getProductStatus);
+router.post('/:id/view', trackProductView);
 router.delete('/:id', authMiddleware, requireRole('seller'), deleteProduct);
 router.patch('/:id', authMiddleware, requireRole('seller'), updateProduct);
 

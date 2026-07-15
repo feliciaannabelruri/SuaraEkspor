@@ -78,6 +78,11 @@ export default function BuyerProductPage() {
     return () => { cancelled = true; };
   }, [id, lang]);
 
+  // Catat 1 kunjungan produk saat halaman pertama kali dibuka (bukan tiap ganti bahasa)
+  useEffect(() => {
+    if (id) apiClient.post(`/products/${id}/view`).catch(() => {});
+  }, [id]);
+
   async function handleContactSeller() {
     setContactError(null);
     const token = typeof window !== 'undefined' ? localStorage.getItem('se_token') : null;

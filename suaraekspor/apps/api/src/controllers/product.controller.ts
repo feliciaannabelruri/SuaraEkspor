@@ -110,6 +110,20 @@ export async function getProduct(req: AuthRequest, res: Response) {
   return res.json({ success: true, data: product });
 }
 
+export async function trackProductView(req: AuthRequest, res: Response) {
+  const { id } = req.params;
+  try {
+    const product = await prisma.product.update({
+      where: { id },
+      data: { viewCount: { increment: 1 } },
+      select: { viewCount: true },
+    });
+    return res.json({ success: true, data: product });
+  } catch {
+    return res.status(404).json({ success: false, error: 'Produk tidak ditemukan' });
+  }
+}
+
 export async function listSellerProducts(req: AuthRequest, res: Response) {
   const products = await prisma.product.findMany({
     where: { sellerId: req.userId! },

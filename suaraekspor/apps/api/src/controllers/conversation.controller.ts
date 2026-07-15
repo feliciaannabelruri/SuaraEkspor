@@ -129,6 +129,17 @@ const history = conversation.messages.slice().reverse().map((m: { senderRole: st
 
   await prisma.conversation.update({ where: { id: conversationId }, data: { updatedAt: new Date() } });
 
+  await prisma.notification.create({
+    data: {
+      userId: conversation.sellerId,
+      type: 'new_message',
+      title: `Pesan baru soal ${productTitle}`,
+      message: agentResult.summaryForSeller,
+      conversationId,
+      audioUrl: summaryAudioUrl,
+    },
+  }).catch((err: Error) => console.error('Failed to create notification:', err));
+
   return res.json({
     success: true,
     data: {
