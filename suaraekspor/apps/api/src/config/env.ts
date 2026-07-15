@@ -1,4 +1,8 @@
 import { z } from 'zod';
+import path from 'path';
+import os from 'os';
+
+const DEFAULT_AUDIO_DIR = path.join(os.tmpdir(), 'suaraekspor-audio');
 
 const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
@@ -10,7 +14,7 @@ const envSchema = z.object({
   IMAGEKIT_PRIVATE_KEY: z.string(),
   IMAGEKIT_URL_ENDPOINT: z.string(),
   FONNTE_API_KEY: z.string().optional(),
-  AUDIO_OUTPUT_DIR: z.string().default('/tmp/suaraekspor-audio'),
+  AUDIO_OUTPUT_DIR: z.string().default(DEFAULT_AUDIO_DIR),
 });
 
 export type Env = z.infer<typeof envSchema>;

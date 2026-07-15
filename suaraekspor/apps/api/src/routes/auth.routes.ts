@@ -11,7 +11,16 @@ router.post('/otp/send', async (req: Request, res: Response) => {
   if (!phone) return res.status(400).json({ success: false, error: 'Nomor HP diperlukan' });
 
   let user = await prisma.user.findUnique({ where: { phone } });
-  if (!user) {
+  if (user) {
+    if (user.role !== role) {
+      const roleLabel = user.role === 'seller' ? 'Penjual (UMKM)' : 'Pembeli (Buyer)';
+      const requestedRoleLabel = role === 'seller' ? 'Penjual (UMKM)' : 'Pembeli (Buyer)';
+      return res.status(400).json({
+        success: false,
+        error: `Nomor WhatsApp ini sudah terdaftar sebagai akun ${roleLabel}. Anda tidak dapat masuk sebagai ${requestedRoleLabel} menggunakan nomor ini.`
+      });
+    }
+  } else {
     user = await prisma.user.create({ data: { phone, role } });
   }
 
@@ -30,7 +39,7 @@ router.post('/otp/send', async (req: Request, res: Response) => {
 
 // Verifikasi OTP
 router.post('/otp/verify', async (req: Request, res: Response) => {
-  const { phone, otp } = req.body;
+  const { phone, otp, role } = req.body;
   if (!phone || !otp) return res.status(400).json({ success: false, error: 'Phone dan OTP diperlukan' });
 
   const user = await prisma.user.findUnique({ where: { phone } });
@@ -44,12 +53,33 @@ router.post('/otp/verify', async (req: Request, res: Response) => {
   if (!token) return res.status(401).json({ success: false, error: 'OTP tidak valid atau kadaluarsa' });
 
   await prisma.otpToken.update({ where: { id: token.id }, data: { used: true } });
-  await prisma.user.update({ where: { id: user.id }, data: { isVerified: true } });
+  
+  // Update verification status
+  const updatedUser = await prisma.user.update({
+    where: { id: user.id },
+    data: { isVerified: true }
+  });
 
-  const jwtToken = jwt.sign({ userId: user.id, role: user.role }, env.JWT_SECRET, { expiresIn: '30d' });
+  const jwtToken = jwt.sign({ userId: updatedUser.id, role: updatedUser.role }, env.JWT_SECRET, { expiresIn: '30d' });
 
-  return res.json({ success: true, data: { token: jwtToken, user: { id: user.id, phone: user.phone, role: user.role } } });
+  return res.json({
+    success: true,
+    data: {
+      token: jwtToken,
+      user: {
+        id: updatedUser.id,
+        phone: updatedUser.phone,
+        role: updatedUser.role,
+        name: updatedUser.name,
+        businessName: updatedUser.businessName,
+        localLanguage: updatedUser.localLanguage,
+        province: updatedUser.province,
+        address: updatedUser.address
+      }
+    }
+  });
 });
+
 
 function generateOTP(): string {
   return Math.floor(100000 + Math.random() * 900000).toString();

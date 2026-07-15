@@ -77,16 +77,16 @@ export default function ConversationDetailPage() {
   const messages = conversation?.messages ?? [];
 
   return (
-    <div className="flex min-h-screen bg-[#FDF0E8] text-[#1c1b1b] font-body-md overflow-x-hidden">
+    <div className="flex min-h-screen bg-background text-on-background font-body-md overflow-x-hidden">
 
       {/* MAIN CONTENT */}
-      <main className="w-full h-screen bg-[#FDF0E8] flex flex-col relative">
+      <main className="w-full h-screen bg-background flex flex-col relative">
 
         {/* HEADER */}
-        <header className="h-20 bg-white flex items-center justify-between px-8 border-b border-[#c1c8c4]/20 z-10">
+        <header className="h-20 bg-white flex items-center justify-between px-8 border-b border-outline-variant/20 z-10">
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-3 cursor-pointer hover:opacity-90 transition-opacity" onClick={() => setShowProfile(!showProfile)}>
-              <button onClick={(e) => { e.stopPropagation(); router.back() }} className="flex items-center gap-1 text-gray-500 hover:text-[#0F4A33] transition-colors mr-2">
+              <button onClick={(e) => { e.stopPropagation(); router.back() }} className="flex items-center gap-1 text-gray-500 hover:text-primary transition-colors mr-2">
                 <ChevronLeft size={20} />
               </button>
 
@@ -95,7 +95,7 @@ export default function ConversationDetailPage() {
               </div>
 
               <div>
-                <h1 className="text-[#0F4A33] font-bold text-sm md:text-base flex items-center gap-1">
+                <h1 className="text-primary font-bold text-sm md:text-base flex items-center gap-1">
                   {buyerName}
                   <span className="material-symbols-outlined text-[16px] opacity-70">{showProfile ? 'expand_less' : 'expand_more'}</span>
                 </h1>
@@ -105,7 +105,7 @@ export default function ConversationDetailPage() {
 
             {/* Status Pills */}
             <div className="flex items-center gap-2 ml-2 sm:ml-4">
-              <div className="flex items-center gap-1 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-full text-[9px] sm:text-[10px] font-bold shadow-sm border bg-[#7EE8BC] text-[#0F4A33] border-transparent">
+              <div className="flex items-center gap-1 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-full text-[9px] sm:text-[10px] font-bold shadow-sm border bg-[#7EE8BC] text-primary border-transparent">
                 <Sparkles size={10} className="mr-0.5" />
                 AI ON
               </div>
@@ -119,7 +119,7 @@ export default function ConversationDetailPage() {
           <div className="flex items-center gap-3">
             <button
               onClick={() => setShowProfile(!showProfile)}
-              className={`w-10 h-10 flex items-center justify-center rounded-full border border-gray-200 bg-white hover:bg-gray-50 shadow-sm transition-colors ${showProfile ? 'bg-gray-100 text-[#0F4A33]' : 'text-gray-600'}`}
+              className={`w-10 h-10 flex items-center justify-center rounded-full border border-gray-200 bg-white hover:bg-gray-50 shadow-sm transition-colors ${showProfile ? 'bg-gray-100 text-primary' : 'text-gray-600'}`}
             >
               <span className="material-symbols-outlined text-[20px]">account_circle</span>
             </button>
@@ -130,7 +130,7 @@ export default function ConversationDetailPage() {
         <div className="flex-1 flex overflow-hidden">
 
           {/* LEFT: CHAT AREA */}
-          <div className="flex-1 flex flex-col min-w-0 bg-[#FDF0E8]">
+          <div className="flex-1 flex flex-col min-w-0 bg-background">
             {/* MESSAGES */}
             <div className="flex-1 px-8 py-6 flex flex-col gap-6 overflow-y-auto scrollbar-hide">
               {loading && <p className="text-gray-400 text-sm text-center mt-10">Memuat percakapan...</p>}
@@ -149,7 +149,7 @@ export default function ConversationDetailPage() {
                         <span className="text-gray-400 text-[10px] ml-1">{m.originalLang?.toUpperCase()}</span>
                         <span className="text-gray-400 text-[10px] ml-1.5">{formatTime(m.createdAt)}</span>
                       </div>
-                      <div className="bg-white border border-[#c1c8c4]/30 rounded-2xl rounded-tl-none p-4 shadow-sm text-gray-800 text-[14px] leading-relaxed">
+                      <div className="bg-white border border-outline-variant/30 rounded-2xl rounded-tl-none p-4 shadow-sm text-gray-800 text-[14px] leading-relaxed">
                         {m.originalText}
                       </div>
                       {m.translatedText && (
@@ -162,9 +162,9 @@ export default function ConversationDetailPage() {
                       <div className="max-w-[85%] md:max-w-[70%] flex flex-col items-end">
                         <div className="flex items-center gap-2 mb-1.5">
                           <span className="text-gray-400 text-[10px]">{formatTime(m.createdAt)}</span>
-                          <span className="text-[#0F4A33] font-bold text-xs">AI Assistant</span>
+                          <span className="text-primary font-bold text-xs">AI Assistant</span>
                         </div>
-                        <div className="bg-[#0F4A33] text-white rounded-2xl rounded-tr-none p-4 shadow-md w-full text-[14px] leading-relaxed relative">
+                        <div className="bg-primary text-white rounded-2xl rounded-tr-none p-4 shadow-md w-full text-[14px] leading-relaxed relative">
                           {m.originalText}
                           <div className="flex items-center gap-1 mt-2 justify-end opacity-90">
                             <span className="text-[9px] text-[#7EE8BC] font-medium">✓ Terkirim</span>
@@ -175,9 +175,9 @@ export default function ConversationDetailPage() {
                         {m.summaryForSeller && (
                           <div className="mt-3 w-full bg-[#FFF9C4] border border-[#FBC02D]/30 rounded-xl p-4 flex items-center justify-between shadow-sm gap-3">
                             <div className="flex items-start gap-3">
-                              <Sparkles size={16} className="text-[#fe802f] mt-0.5 flex-shrink-0" />
+                              <Sparkles size={16} className="text-secondary-container mt-0.5 flex-shrink-0" />
                               <p className="text-gray-800 text-[13px] leading-relaxed">
-                                <span className="font-bold text-[#fe802f]">Ringkasan AI:</span> {m.summaryForSeller}
+                                <span className="font-bold text-secondary-container">Ringkasan AI:</span> {m.summaryForSeller}
                               </p>
                             </div>
                             {m.summaryAudioUrl && (
@@ -193,10 +193,10 @@ export default function ConversationDetailPage() {
             </div>
 
             {/* READ-ONLY NOTICE (replaces fake send box) */}
-            <footer className="bg-white px-4 md:px-8 py-5 md:py-6 border-t border-[#c1c8c4]/30">
-              <div className="flex items-center gap-3 bg-[#0F4A33]/5 border border-[#0F4A33]/10 rounded-2xl px-4 py-4">
-                <Sparkles size={18} className="text-[#0F4A33] flex-shrink-0" />
-                <p className="text-[#0F4A33] text-[12px] md:text-[13px] font-semibold leading-relaxed">
+            <footer className="bg-white px-4 md:px-8 py-5 md:py-6 border-t border-outline-variant/30">
+              <div className="flex items-center gap-3 bg-primary/5 border border-primary/10 rounded-2xl px-4 py-4">
+                <Sparkles size={18} className="text-primary flex-shrink-0" />
+                <p className="text-primary text-[12px] md:text-[13px] font-semibold leading-relaxed">
                   Balasan otomatis dikirim oleh AI — mode manual balas belum tersedia.
                 </p>
               </div>
@@ -212,7 +212,7 @@ export default function ConversationDetailPage() {
           )}
 
           {/* RIGHT PANEL: BUYER PROFILE (Drawer) */}
-          <div className={`absolute right-0 top-0 bottom-0 w-80 bg-white border-l border-[#c1c8c4]/20 flex-col overflow-y-auto shrink-0 z-50 shadow-2xl transition-transform duration-300 ${showProfile ? 'translate-x-0' : 'translate-x-full'}`}>
+          <div className={`absolute right-0 top-0 bottom-0 w-80 bg-white border-l border-outline-variant/20 flex-col overflow-y-auto shrink-0 z-50 shadow-2xl transition-transform duration-300 ${showProfile ? 'translate-x-0' : 'translate-x-full'}`}>
             <div className="p-6">
               <div className="flex items-center justify-between mb-6">
                 <h3 className="font-bold text-gray-900 text-sm uppercase tracking-wider">Profil Pembeli</h3>
@@ -222,7 +222,7 @@ export default function ConversationDetailPage() {
               </div>
 
               <div className="flex flex-col items-center mb-8">
-                <div className="w-24 h-24 rounded-full bg-[#0F4A33] text-white flex items-center justify-center text-3xl font-bold mb-4 shadow-md">
+                <div className="w-24 h-24 rounded-full bg-primary text-white flex items-center justify-center text-3xl font-bold mb-4 shadow-md">
                   {buyerName.slice(0, 2).toUpperCase()}
                 </div>
                 <h2 className="text-xl font-bold text-gray-900">{buyerName}</h2>
@@ -233,7 +233,7 @@ export default function ConversationDetailPage() {
 
               <div className="mb-8">
                 <h4 className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-3">Produk</h4>
-                <div className="bg-white border border-[#c1c8c4]/30 rounded-xl p-3 flex gap-4 items-center shadow-sm">
+                <div className="bg-white border border-outline-variant/30 rounded-xl p-3 flex gap-4 items-center shadow-sm">
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-bold text-gray-900 leading-tight mb-1 truncate">{productTitle}</p>
                   </div>

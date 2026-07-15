@@ -93,3 +93,33 @@ function getLanguageName(code: string): string {
   };
   return names[code] ?? code;
 }
+
+export async function translateDictionary(dictionary: Record<string, string>, targetLanguage: string): Promise<Record<string, string>> {
+  const prompt = `Kamu adalah AI penerjemah profesional untuk platform ekspor SuaraEkspor.
+Tugasmu: Terjemahkan seluruh nilai string (values) dari objek JSON berikut ke dalam bahasa target: "${targetLanguage}".
+PENTING:
+1. Kembalikan HASILNYA SAJA dalam format JSON objek dengan kunci (keys) yang sama persis seperti aslinya.
+2. Jangan ubah format placeholder seperti {name} atau {businessName}. Biarkan kata kunci placeholder tersebut tetap apa adanya dalam terjemahan.
+3. Jangan tambahkan komentar, penjelasan, markdown, atau pembungkus kode lainnya. Cukup kembalikan objek JSON mentah.
+
+Daftar Kata/Frasa yang Harus Diterjemahkan:
+${JSON.stringify(dictionary, null, 2)}`;
+
+  const response = await groq.chat.completions.create({
+    model: GROQ_MODELS.chatJson,
+    messages: [
+      { role: 'system', content: 'Kamu adalah mesin penerjemah JSON yang akurat.' },
+      { role: 'user', content: prompt }
+    ],
+    temperature: 0.1,
+    response_format: { type: 'json_object' }
+  });
+
+  const content = response.choices[0]?.message?.content || '{}';
+  try {
+    return JSON.parse(content);
+  } catch (err) {
+    console.error('Failed to parse translation result:', content);
+    return {};
+  }
+}

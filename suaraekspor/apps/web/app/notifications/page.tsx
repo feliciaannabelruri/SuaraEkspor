@@ -91,11 +91,11 @@ export default function NotificationsPage() {
   const unreadCount = notifications.filter(n => !n.read).length;
 
   return (
-    <div className="flex min-h-screen bg-[#FDF0E8] text-[#1c1b1b] font-body-md overflow-x-hidden">
+    <div className="flex min-h-screen bg-background text-on-background font-body-md overflow-x-hidden">
       <Sidebar />
 
       {/* MAIN CONTENT */}
-      <main className="w-full md:w-[calc(100%-14rem)] md:ml-56 min-h-screen bg-[#FDF0E8] flex flex-col relative pb-24 md:pb-10">
+      <main className="w-full md:w-[calc(100%-14rem)] md:ml-56 min-h-screen bg-background flex flex-col relative pb-24 md:pb-10">
         {/* Top Navbar */}
         <header className="bg-white border-b border-gray-200 h-16 flex items-center justify-between px-6 md:px-8 sticky top-0 z-30">
           <div>
@@ -131,7 +131,7 @@ export default function NotificationsPage() {
           </header>
 
           {/* INFO BANNER */}
-          <div className="mb-6 p-4 bg-[#0F4A33] rounded-xl flex items-start gap-3 text-white shadow-sm">
+          <div className="mb-6 p-4 bg-primary rounded-xl flex items-start gap-3 text-white shadow-sm">
             <span className="material-symbols-outlined bg-white/20 p-1.5 rounded-lg text-white text-[20px]">auto_awesome</span>
             <p className="text-sm leading-relaxed mt-0.5">
               AI merangkum setiap pesan buyer ke dalam bahasa Anda. Ketuk tombol suara untuk mendengar ringkasan.
@@ -141,30 +141,30 @@ export default function NotificationsPage() {
           {/* NOTIFICATIONS LIST */}
           <div className="space-y-4">
             {notifications.map(notif => (
-              <div key={notif.id} className={`bg-white rounded-xl ${!notif.read ? 'border-l-[6px] border-[#0F4A33] shadow-sm hover:shadow-md border-[#c1c8c4]/30' : 'border border-[#c1c8c4]/30 opacity-60 grayscale-[0.3]'} p-4 md:p-5 transition-all`}>
+              <div key={notif.id} className={`bg-white rounded-xl ${!notif.read ? 'border-l-[6px] border-primary shadow-sm hover:shadow-md border-outline-variant/30' : 'border border-outline-variant/30 opacity-60 grayscale-[0.3]'} p-4 md:p-5 transition-all`}>
                 
                 <div className="flex justify-between items-start mb-3">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-[#c5eadf] flex items-center justify-center text-[#01261f] font-bold text-lg flex-shrink-0">
+                    <div className="w-10 h-10 rounded-full bg-primary-fixed flex items-center justify-center text-primary font-bold text-lg flex-shrink-0">
                       {notif.buyerName.charAt(0)}
                     </div>
                     <div>
-                      <h3 className="text-lg font-bold text-[#0F4A33] flex items-center gap-1.5">
+                      <h3 className="text-lg font-bold text-primary flex items-center gap-1.5">
                         {notif.buyerName}
-                        <span className="text-sm text-[#414846] font-normal">({notif.buyerCountry.replace(/[^A-Za-z\s]/g, '').trim()})</span>
+                        <span className="text-sm text-gray-600 font-normal">({notif.buyerCountry.replace(/[^A-Za-z\s]/g, '').trim()})</span>
                       </h3>
-                      <p className="text-[10px] font-bold text-[#9c4400] uppercase tracking-widest mt-0.5">Produk: {notif.product}</p>
+                      <p className="text-[10px] font-bold text-secondary uppercase tracking-widest mt-0.5">Produk: {notif.product}</p>
                     </div>
                   </div>
-                  <span className="text-[#414846] text-xs">{notif.time}</span>
+                  <span className="text-gray-600 text-xs">{notif.time}</span>
                 </div>
 
                 {/* AI Summary Box */}
-                <div className={`${!notif.read ? 'bg-[#ffdbca]/40 border-[#ffdbca]' : 'bg-[#f6f3f2] border-[#c1c8c4]'} p-4 rounded-lg mb-4 border`}>
+                <div className={`${!notif.read ? 'bg-secondary-fixed/40 border-secondary-fixed' : 'bg-surface-container-low border-outline-variant'} p-4 rounded-lg mb-4 border`}>
                   <div className="flex justify-between items-center mb-2">
-                    <span className={`text-[10px] font-bold ${!notif.read ? 'text-[#331100]' : 'text-[#414846]'} uppercase tracking-widest`}>RINGKASAN {notif.summaryLang.toUpperCase()}</span>
+                    <span className={`text-[10px] font-bold ${!notif.read ? 'text-on-secondary-fixed' : 'text-gray-600'} uppercase tracking-widest`}>RINGKASAN {notif.summaryLang.toUpperCase()}</span>
                     
-                    <button onClick={() => playAudio(notif.id)} disabled={notif.read && playingId !== notif.id} className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold transition-transform ${playingId === notif.id ? 'bg-[#0F4A33] text-white scale-105' : (!notif.read ? 'bg-[#0F4A33] text-white hover:scale-105' : 'bg-gray-300 text-gray-500 cursor-not-allowed opacity-60')}`}>
+                    <button onClick={() => playAudio(notif.id)} disabled={notif.read && playingId !== notif.id} className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold transition-transform ${playingId === notif.id ? 'bg-primary text-white scale-105' : (!notif.read ? 'bg-primary text-white hover:scale-105' : 'bg-gray-300 text-gray-500 cursor-not-allowed opacity-60')}`}>
                       <span className="material-symbols-outlined text-[14px]" style={{ fontVariationSettings: "'FILL' 1" }}>volume_up</span>
                       Dengar
                     </button>
@@ -176,27 +176,27 @@ export default function NotificationsPage() {
                       {Array.from({ length: 30 }).map((_, i) => {
                         const heights = [3, 6, 4, 8, 5, 7, 3, 9, 6, 4, 8, 5, 7, 3, 6, 4, 8, 5, 3, 7, 4, 6, 8, 5, 9, 4, 6, 3, 5, 7];
                         return (
-                          <div key={i} className="flex-1 bg-[#0F4A33] rounded-full animate-pulse"
+                          <div key={i} className="flex-1 bg-primary rounded-full animate-pulse"
                             style={{ height: `${heights[i] * 2}px`, animationDelay: `${i * 0.05}s` }} />
                         );
                       })}
                     </div>
                   )}
 
-                  <p className={`text-sm italic leading-relaxed ${!notif.read ? 'text-[#331100]' : 'text-[#414846]'}`}>
+                  <p className={`text-sm italic leading-relaxed ${!notif.read ? 'text-[#331100]' : 'text-gray-600'}`}>
                     "{notif.summary}"
                   </p>
                 </div>
 
                 {/* Actions */}
                 <div className="flex gap-2">
-                  <button onClick={() => router.push(`/conversations/${notif.conversationId}`)} className={`px-4 py-2 rounded-lg font-bold transition-all flex items-center justify-center gap-1.5 text-sm ${!notif.read ? 'bg-[#0F4A33] text-white hover:brightness-110' : 'bg-transparent border border-[#717976] text-[#414846] hover:bg-gray-100'}`}>
+                  <button onClick={() => router.push(`/conversations/${notif.conversationId}`)} className={`px-4 py-2 rounded-lg font-bold transition-all flex items-center justify-center gap-1.5 text-sm ${!notif.read ? 'bg-primary text-white hover:brightness-110' : 'bg-transparent border border-[#717976] text-gray-600 hover:bg-gray-100'}`}>
                     Lihat {notif.read ? 'Riwayat' : 'Percakapan'}
                   </button>
                   {!notif.read && (
                     <button onClick={() => {
                         setNotifications(prev => prev.map(n => n.id === notif.id ? { ...n, read: true } : n));
-                      }} className="bg-white border border-[#717976] text-[#414846] px-4 py-2 rounded-lg font-bold hover:bg-gray-50 transition-all text-sm">
+                      }} className="bg-white border border-[#717976] text-gray-600 px-4 py-2 rounded-lg font-bold hover:bg-gray-50 transition-all text-sm">
                       Tandai Dibaca
                     </button>
                   )}
@@ -207,7 +207,7 @@ export default function NotificationsPage() {
 
           {/* Load More Hint */}
           <div className="mt-12 flex justify-center">
-            <button className="text-[#0F4A33] font-bold flex items-center gap-2 hover:underline">
+            <button className="text-primary font-bold flex items-center gap-2 hover:underline">
               Lihat notifikasi terdahulu
               <span className="material-symbols-outlined">expand_more</span>
             </button>
@@ -216,7 +216,7 @@ export default function NotificationsPage() {
         </div>
 
         {/* BOTTOM NAV MOBILE */}
-        <nav className="md:hidden fixed bottom-0 left-0 w-full bg-[#01261f] border-t border-[#83a69c]/10 flex z-50 pb-safe shadow-lg">
+        <nav className="md:hidden fixed bottom-0 left-0 w-full bg-primary border-t border-primary-fixed-dim/10 flex z-50 pb-safe shadow-lg">
           {[
             { label: 'Produk', href: '/dashboard', icon: 'inventory_2' },
             { label: 'Upload', href: '/upload', icon: 'upload_file' },
@@ -232,7 +232,7 @@ export default function NotificationsPage() {
                 key={item.href} 
                 href={item.href} 
                 className={`flex-1 flex flex-col items-center py-2.5 transition-colors relative ${
-                  isActive ? 'text-[#fe802f]' : 'text-[#83a69c] opacity-80 hover:opacity-100'
+                  isActive ? 'text-secondary-container' : 'text-primary-fixed-dim opacity-80 hover:opacity-100'
                 }`}
               >
                 <span 
@@ -242,7 +242,7 @@ export default function NotificationsPage() {
                   {item.icon}
                 </span>
                 {item.label === 'Pesan' && (
-                  <span className="absolute top-2.5 right-6 w-2 h-2 bg-red-500 rounded-full border border-[#01261f]"></span>
+                  <span className="absolute top-2.5 right-6 w-2 h-2 bg-red-500 rounded-full border border-primary"></span>
                 )}
                 <span className={`text-[9px] mt-0.5 ${isActive ? 'font-bold' : 'font-medium'}`}>{item.label}</span>
               </Link>

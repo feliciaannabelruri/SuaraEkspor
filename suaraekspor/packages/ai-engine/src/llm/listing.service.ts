@@ -17,6 +17,15 @@ const listingGenerationSchema = z.object({
   exportReadinessScore: z.number(),
 }) satisfies z.ZodType<ListingGenerationResult>;
 
+const REQUIRED_LANGUAGES: Record<string, string> = {
+  id: 'Bahasa Indonesia',
+  en: 'English',
+  zh: '中文',
+  ar: 'العربية',
+  ja: '日本語',
+  de: 'Deutsch',
+};
+
 /**
  * Menghasilkan listing produk multibahasa dari hasil STT + Vision.
  * Output: title + description + keywords dalam 6 bahasa target buyer.
@@ -25,42 +34,62 @@ export async function generateMultilingualListing(
   sttResult: STTResult,
   visionResult: VisionResult,
 ): Promise<ListingGenerationResult> {
-  const systemPrompt = `Kamu adalah AI spesialis pembuatan listing produk ekspor untuk platform marketplace internasional.
-Kamu membantu UMKM Indonesia menjual produk mereka ke buyer global.
-Jawab HANYA dalam format JSON yang valid.`;
+  const hasRealTranscript = Boolean(sttResult.transcript && sttResult.transcript.trim().length > 10);
+  const vis = visionResult as any;
 
-  const userPrompt = `Buat listing produk ekspor profesional berdasarkan data berikut:
+  const systemPrompt = `Kamu adalah AI spesialis pembuatan listing produk ekspor untuk UMKM Indonesia.
+Tugasmu: membuat listing yang SANGAT SPESIFIK dan PERSONAL.
 
-DESKRIPSI PENJUAL (bahasa: ${sttResult.detectedLanguage}):
-"${sttResult.transcript}"
+ATURAN WAJIB:
+1. Nama produk HARUS spesifik sesuai apa yang terlihat di foto dan/atau disebutkan penjual — BUKAN generic seperti "Kerajinan Indonesia" atau "Kerajinan Unik"
+2. Jika ucapan penjual mendeskripsikan produk dengan jelas → gunakan sebagai dasar utama
+3. Jika ucapan penjual TIDAK mendeskripsikan produk (misalnya berbicara tentang hal lain, bertanya, atau tidak relevan dengan produk) → ABAIKAN dan gunakan ANALISIS FOTO sebagai sumber utama
+4. DILARANG KERAS menggunakan template generic seperti "dibuat dengan cinta", "berkualitas tinggi", "sentuhan Indonesia"
+5. Gunakan detail konkret yang terlihat/terdengar: nama produk spesifik, bahan, bentuk, fungsi, daerah asal
+6. Jawab HANYA dalam format JSON yang valid`;
 
-ANALISIS FOTO PRODUK:
-- Jenis: ${visionResult.productType}
-- Kondisi: ${visionResult.condition}
-- Fitur: ${visionResult.visualFeatures.join(', ')}
-- Kategori: ${visionResult.estimatedCategory}
+  const transcriptPart = hasRealTranscript
+    ? `UCAPAN PENJUAL:\n"${sttResult.transcript}"\n(Nilai relevansi: jika ucapan ini menjelaskan produknya → gunakan. Jika tidak relevan dengan produk di foto → abaikan dan andalkan foto.)`
+    : `(Tidak ada voice note dari penjual)`;
 
-Buat listing dalam bahasa-bahasa berikut: en, zh, ar, ja, de, id
+  const userPrompt = `Buat listing produk ekspor berdasarkan kombinasi data foto dan ucapan penjual berikut:
 
-Format JSON yang diinginkan:
+--- DATA FOTO PRODUK (SELALU GUNAKAN INI) ---
+Jenis produk terlihat di foto: ${vis.productType}
+Deskripsi visual dari foto: "${vis.productDescription}"
+Fitur visual: ${vis.visualFeatures?.join(', ') || ''}
+Kondisi: ${vis.condition}
+Kategori: ${vis.estimatedCategory}
+
+--- UCAPAN PENJUAL (gunakan HANYA jika relevan dengan produk di foto) ---
+${transcriptPart}
+
+---
+
+Instruksi:
+- Nama produk untuk bahasa id: langsung dari jenis produk yang TERLIHAT di foto atau disebutkan penjual — SPESIFIK, max 80 karakter
+- Deskripsi untuk bahasa id: 150-250 kata, fokus pada apa yang terlihat di foto (bahan, bentuk, motif, fungsi, keunikan)
+- Untuk bahasa lain: terjemahkan nama & deskripsi yang sama secara natural
+
+Format JSON (wajib 6 bahasa: id, en, zh, ar, ja, de):
 {
   "listings": [
     {
-      "languageCode": "en",
-      "languageName": "English",
-      "title": "string — judul produk menarik max 80 karakter",
-      "description": "string — deskripsi profesional 150-300 kata, highlight keunikan produk lokal Indonesia",
-      "keywords": ["array 8-10 keyword SEO relevan"]
+      "languageCode": "id",
+      "languageName": "Bahasa Indonesia",
+      "title": "nama produk SPESIFIK berdasarkan foto",
+      "description": "deskripsi konkret berdasarkan foto — sebutkan bahan, bentuk, fungsi, keunikan",
+      "keywords": ["8-10 keyword SEO bahasa Indonesia"]
     }
-    // ... ulangi untuk setiap bahasa
   ],
-  "targetMarkets": ["array negara target: USA, UK, Japan, China, dll"],
+  "targetMarkets": ["negara target"],
   "exportReadinessScore": 0
 }
 
-exportReadinessScore: 0-100, nilai kesiapan produk ini untuk ekspor.`;
+exportReadinessScore: 0-100.`;
 
-  return chatJsonWithValidation(
+
+  const raw = await chatJsonWithValidation(
     groq,
     {
       model: GROQ_MODELS.chatJson,
@@ -68,10 +97,30 @@ exportReadinessScore: 0-100, nilai kesiapan produk ini untuk ekspor.`;
         { role: 'system', content: systemPrompt },
         { role: 'user', content: userPrompt },
       ],
-      max_tokens: 3000,
+      max_tokens: 4500,
       response_format: { type: 'json_object' },
     },
     listingGenerationSchema,
     'AI listing generation',
   );
+
+  // --- Post-process: ensure all 6 required languages are present and non-empty ---
+  const idListing = raw.listings.find(l => l.languageCode === 'id');
+  const filledListings = Object.entries(REQUIRED_LANGUAGES).map(([code, name]) => {
+    const existing = raw.listings.find(l => l.languageCode === code);
+    // Use existing if title AND description are both non-empty
+    if (existing && existing.title.trim() && existing.description.trim()) {
+      return existing;
+    }
+    // Fallback: copy from Indonesian listing (title/desc not translated but better than empty)
+    return {
+      languageCode: code,
+      languageName: name,
+      title: idListing?.title ?? existing?.title ?? '',
+      description: idListing?.description ?? existing?.description ?? '',
+      keywords: existing?.keywords ?? idListing?.keywords ?? [],
+    };
+  });
+
+  return { ...raw, listings: filledListings };
 }

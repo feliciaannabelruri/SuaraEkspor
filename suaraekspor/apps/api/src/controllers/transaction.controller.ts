@@ -53,8 +53,12 @@ export async function advanceTransactionStatus(req: AuthRequest, res: Response) 
   const { id } = req.params;
   const transaction = await prisma.transaction.findUnique({ where: { id } });
   if (!transaction) return res.status(404).json({ success: false, error: 'Transaksi tidak ditemukan' });
-  if (transaction.sellerId !== req.userId) {
-    return res.status(403).json({ success: false, error: 'Hanya penjual yang dapat mengubah status transaksi ini' });
+  
+  // Allow either seller or buyer to advance simulated transactions
+  const isSeller = transaction.sellerId === req.userId;
+  const isBuyer = transaction.buyerId === req.userId;
+  if (!isSeller && !isBuyer) {
+    return res.status(403).json({ success: false, error: 'Tidak diizinkan mengubah status transaksi ini' });
   }
 
   const { status } = req.body;
@@ -71,3 +75,17 @@ export async function advanceTransactionStatus(req: AuthRequest, res: Response) 
   const updated = await prisma.transaction.update({ where: { id }, data: { status: next as any } });
   return res.json({ success: true, data: updated });
 }
+
+export async function deleteTransaction(req: AuthRequest, res: Response) {
+  const { id } = req.params;
+  const transaction = await prisma.transaction.findUnique({ where: { id } });
+  if (!transaction) return res.status(404).json({ success: false, error: 'Transaksi tidak ditemukan' });
+
+  if (transaction.buyerId !== req.userId && transaction.sellerId !== req.userId) {
+    return res.status(403).json({ success: false, error: 'Tidak diizinkan menghapus transaksi ini' });
+  }
+
+  await prisma.transaction.delete({ where: { id } });
+  return res.json({ success: true, message: 'Transaksi berhasil dihapus' });
+}
+

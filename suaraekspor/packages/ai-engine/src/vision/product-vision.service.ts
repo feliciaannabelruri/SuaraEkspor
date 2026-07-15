@@ -5,6 +5,7 @@ import { groq, GROQ_MODELS } from '../client';
 
 const visionResultSchema = z.object({
   productType: z.string(),
+  productDescription: z.string(),
   condition: z.string(),
   visualFeatures: z.array(z.string()),
   estimatedCategory: z.string(),
@@ -19,8 +20,10 @@ const visionResultSchema = z.object({
  */
 export async function analyzeProductPhoto(photoUrls: string[]): Promise<VisionResult> {
   const systemPrompt = `Kamu adalah AI spesialis analisis produk UMKM Indonesia untuk keperluan ekspor.
-Tugasmu: menganalisis foto produk dan menghasilkan data terstruktur yang berguna untuk listing ekspor.
-Jawab HANYA dalam format JSON yang valid, tanpa markdown.`;
+Tugasmu: menganalisis foto produk dan menghasilkan data SPESIFIK yang berguna untuk listing ekspor.
+Jawab HANYA dalam format JSON yang valid, tanpa markdown.
+
+Penting: beri nama produk yang SPESIFIK (bukan generic seperti "kerajinan tangan"), dan tulis deskripsi yang konkret berdasarkan apa yang terlihat di foto.`;
 
   const multiPhotoNote =
     photoUrls.length > 1
@@ -29,11 +32,12 @@ Jawab HANYA dalam format JSON yang valid, tanpa markdown.`;
 
   const userPrompt = `Analisis foto produk ini dan berikan JSON dengan format PERSIS berikut:${multiPhotoNote}
 {
-  "productType": "string — nama jenis produk spesifik, misal 'Batik Tulis Pekalongan'",
+  "productType": "string — nama jenis produk SPESIFIK dari foto, misal: 'Piring Kayu Ukir Jepara', 'Batik Tulis Motif Parang', 'Anyaman Bambu Tatakan Gelas'",
+  "productDescription": "string — deskripsi 3-5 kalimat berdasarkan apa yang terlihat di foto: sebutkan bahan, warna, bentuk, motif/ukiran, kegunaan, dan keunikannya. Harus spesifik, bukan template.",
   "condition": "string — kondisi produk: 'baru', 'sangat baik', atau 'baik'",
-  "visualFeatures": ["array string — fitur visual penting: warna, motif, bahan, ukuran estimasi"],
+  "visualFeatures": ["array string — fitur visual konkret yang terlihat: warna dominan, motif/pola spesifik, bahan yang terlihat, ukuran estimasi, finishing, tekstur"],
   "estimatedCategory": "string — salah satu dari: kerajinan, pertanian, tekstil, kuliner, tanaman, lainnya",
-  "suggestedKeywords": ["array string — 5-8 kata kunci bahasa Inggris untuk SEO ekspor"],
+  "suggestedKeywords": ["array string — 6-8 kata kunci bahasa Inggris spesifik untuk SEO ekspor"],
   "confidence": 0.0
 }`;
 
@@ -53,7 +57,7 @@ Jawab HANYA dalam format JSON yang valid, tanpa markdown.`;
           content: [{ type: 'text', text: userPrompt }, ...imageContent],
         },
       ],
-      max_tokens: 800,
+      max_tokens: 1200,
       response_format: { type: 'json_object' },
     },
     visionResultSchema,

@@ -12,7 +12,7 @@ const guides = [
     icon: 'description',
     title: 'Dokumen Ekspor yang Dibutuhkan',
     tag: 'Regulasi',
-    color: 'text-[#0F4A33] bg-[#c5eadf]',
+    color: 'text-primary bg-primary-fixed',
     time: '5 Menit Baca',
     content: [
       { q: 'Apa saja dokumen wajib?', a: 'Invoice komersial, packing list, bill of lading/airway bill, certificate of origin (SKA), dan customs declaration.' },
@@ -25,7 +25,7 @@ const guides = [
     icon: 'payments',
     title: 'Cara Terima Pembayaran Internasional',
     tag: 'Keuangan',
-    color: 'text-[#9c4400] bg-[#ffdbca]',
+    color: 'text-secondary bg-secondary-fixed',
     time: '7 Menit Baca',
     content: [
       { q: 'Metode pembayaran apa yang aman?', a: 'PayPal (paling umum), Wise (biaya rendah), Letter of Credit/L/C (untuk order besar), dan transfer bank SWIFT.' },
@@ -38,7 +38,7 @@ const guides = [
     icon: 'local_shipping',
     title: 'Panduan Pengiriman Internasional',
     tag: 'Logistik',
-    color: 'text-[#0F4A33] bg-[#b0f2b7]',
+    color: 'text-primary bg-tertiary-fixed',
     time: '5 Menit Baca',
     content: [
       { q: 'Ekspedisi apa yang tersedia?', a: 'DHL Express (3–5 hari, mahal), FedEx, UPS, EMS Pos Indonesia (7–14 hari, lebih murah), dan J&T International.' },
@@ -51,7 +51,7 @@ const guides = [
     icon: 'lightbulb',
     title: 'Tips Sukses Ekspor UMKM',
     tag: 'Tips',
-    color: 'text-[#0F4A33] bg-[#f6f3f2]',
+    color: 'text-primary bg-[#f6f3f2]',
     time: '4 Menit Baca',
     content: [
       { q: 'Bagaimana menarik buyer internasional?', a: 'Foto produk berkualitas tinggi, deskripsi yang jelas dalam bahasa Inggris, harga kompetitif, dan respons cepat terhadap pertanyaan buyer.' },
@@ -75,12 +75,12 @@ export default function PanduanPage() {
   const progressPercent = Math.min(100, Math.max(0, (activeCount / 12) * 100)); // rough estimate
 
   return (
-    <div className="flex min-h-screen bg-[#FDF0E8] text-[#1c1b1b] font-body-md overflow-x-hidden">
+    <div className="flex min-h-screen bg-background text-on-background font-body-md overflow-x-hidden">
       {/* DESKTOP SIDEBAR */}
       <Sidebar />
 
       {/* MAIN CONTENT */}
-      <main className="w-full md:w-[calc(100%-14rem)] md:ml-56 min-h-screen bg-[#FDF0E8] flex flex-col relative pb-24 md:pb-10">
+      <main className="w-full md:w-[calc(100%-14rem)] md:ml-56 min-h-screen bg-background flex flex-col relative pb-24 md:pb-10">
         <header className="bg-white border-b border-gray-200 h-16 flex items-center justify-between px-6 md:px-8 sticky top-0 z-30">
           <div>
             <h1 className="text-sm font-bold text-gray-800">Panduan</h1>
@@ -106,7 +106,7 @@ export default function PanduanPage() {
         <section className="px-4 md:px-12 mt-6 relative z-20">
           <div className="max-w-[1280px] mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
             {guides.map(g => (
-              <a href={`#section-${g.id}`} key={g.id} className="bg-white p-6 rounded-2xl border border-gray-200 hover:border-[#0F4A33] transition-all group cursor-pointer shadow-sm hover:shadow-md block">
+              <a href={`#section-${g.id}`} key={g.id} className="bg-white p-6 rounded-2xl border border-gray-200 hover:border-primary transition-all group cursor-pointer shadow-sm hover:shadow-md block">
                 <div className={`w-12 h-12 md:w-14 md:h-14 rounded-xl flex items-center justify-center transition-all mb-4 ${g.color}`}>
                   <span className="material-symbols-outlined text-2xl md:text-3xl">{g.icon}</span>
                 </div>
@@ -126,7 +126,7 @@ export default function PanduanPage() {
               <div key={g.id} id={`section-${g.id}`} className="space-y-6">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-gray-200 pb-4">
                   <div className="flex items-center gap-3">
-                    <span className="material-symbols-outlined text-[#0F4A33] text-2xl md:text-3xl">{g.icon}</span>
+                    <span className="material-symbols-outlined text-primary text-2xl md:text-3xl">{g.icon}</span>
                     <h2 className="font-bold text-xl md:text-2xl text-gray-900">{g.title}</h2>
                   </div>
                   <span className="px-3 py-1 bg-white border border-gray-200 rounded-full text-[10px] font-bold uppercase tracking-wider text-gray-500 w-fit">
@@ -138,7 +138,7 @@ export default function PanduanPage() {
                   {g.content.map((item, i) => {
                     const isOpen = open[`${g.id}-${i}`];
                     return (
-                      <div key={i} className="bg-white border border-gray-200 rounded-xl overflow-hidden transition-all shadow-sm hover:border-[#0F4A33]/30">
+                      <div key={i} className="bg-white border border-gray-200 rounded-xl overflow-hidden transition-all shadow-sm hover:border-primary/30">
                         <button 
                           className="w-full flex items-start sm:items-center justify-between p-4 md:p-6 text-left hover:bg-gray-50 transition-colors" 
                           onClick={() => toggle(`${g.id}-${i}`)}
@@ -156,7 +156,7 @@ export default function PanduanPage() {
                         </button>
                         
                         {isOpen && (
-                          <div className="border-t border-gray-100 bg-[#fcf9f8]">
+                          <div className="border-t border-gray-100 bg-background">
                             <div className="p-4 md:p-6 text-sm text-gray-700 leading-relaxed space-y-4">
                               <p>{item.a}</p>
                             </div>
@@ -177,15 +177,15 @@ export default function PanduanPage() {
               <h3 className="font-bold text-lg mb-4 text-gray-900">Siap untuk Ekspor?</h3>
               <div className="space-y-3 mb-5">
                 <div className="flex items-center gap-3 text-sm text-gray-600">
-                  <span className="material-symbols-outlined text-[#0F4A33] text-[18px]">check_circle</span>
+                  <span className="material-symbols-outlined text-primary text-[18px]">check_circle</span>
                   Siapkan Dokumen
                 </div>
                 <div className="flex items-center gap-3 text-sm text-gray-600">
-                  <span className="material-symbols-outlined text-[#0F4A33] text-[18px]">check_circle</span>
+                  <span className="material-symbols-outlined text-primary text-[18px]">check_circle</span>
                   Foto Produk Berkualitas
                 </div>
               </div>
-              <button onClick={() => router.push('/upload')} className="w-full py-2.5 bg-[#fe802f] text-white font-bold rounded-xl hover:bg-opacity-90 transition-all flex items-center justify-center gap-2 text-sm shadow-sm">
+              <button onClick={() => router.push('/upload')} className="w-full py-2.5 bg-secondary-container text-white font-bold rounded-xl hover:bg-opacity-90 transition-all flex items-center justify-center gap-2 text-sm shadow-sm">
                 <span className="material-symbols-outlined text-[18px]">upload_file</span>
                 Upload Produk Baru
               </button>
@@ -204,7 +204,7 @@ export default function PanduanPage() {
                     />
                   </div>
                   <div>
-                    <h4 className="text-sm font-bold leading-tight group-hover:text-[#0F4A33] transition-colors text-gray-800 mb-2">Cara Memilih Kontainer untuk Ekspor Laut</h4>
+                    <h4 className="text-sm font-bold leading-tight group-hover:text-primary transition-colors text-gray-800 mb-2">Cara Memilih Kontainer untuk Ekspor Laut</h4>
                     <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">12 Des • 10 Menit</p>
                   </div>
                 </div>
@@ -217,7 +217,7 @@ export default function PanduanPage() {
                     />
                   </div>
                   <div>
-                    <h4 className="text-sm font-bold leading-tight group-hover:text-[#0F4A33] transition-colors text-gray-800 mb-2">Panduan Mengisi PEB dengan Benar</h4>
+                    <h4 className="text-sm font-bold leading-tight group-hover:text-primary transition-colors text-gray-800 mb-2">Panduan Mengisi PEB dengan Benar</h4>
                     <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">10 Des • 15 Menit</p>
                   </div>
                 </div>
@@ -225,10 +225,10 @@ export default function PanduanPage() {
             </div>
             
             {/* Call to Action */}
-            <div className="bg-[#fe802f] p-6 rounded-2xl text-white shadow-sm">
+            <div className="bg-secondary-container p-6 rounded-2xl text-white shadow-sm">
               <h3 className="font-bold text-lg mb-2">Butuh Bantuan Personal?</h3>
               <p className="text-sm mb-5 opacity-90 leading-relaxed">Hubungi Expert Advisor kami melalui WhatsApp untuk konsultasi 1-on-1.</p>
-              <button onClick={() => router.push('/whatsapp')} className="w-full py-3 bg-[#0F4A33] text-white font-bold rounded-xl hover:bg-opacity-90 transition-all flex items-center justify-center gap-2 text-sm shadow-sm">
+              <button onClick={() => router.push('/whatsapp')} className="w-full py-3 bg-primary text-white font-bold rounded-xl hover:bg-opacity-90 transition-all flex items-center justify-center gap-2 text-sm shadow-sm">
                 <span className="material-symbols-outlined text-[18px]">chat</span>
                 Chat Advisor
               </button>
@@ -237,7 +237,7 @@ export default function PanduanPage() {
         </div>
 
         {/* BOTTOM NAV MOBILE */}
-        <nav className="md:hidden fixed bottom-0 left-0 w-full bg-[#01261f] border-t border-[#83a69c]/10 flex z-50 pb-safe shadow-lg">
+        <nav className="md:hidden fixed bottom-0 left-0 w-full bg-primary border-t border-primary-fixed-dim/10 flex z-50 pb-safe shadow-lg">
           {[
             { label: 'Produk', href: '/dashboard', icon: 'inventory_2' },
             { label: 'Upload', href: '/upload', icon: 'upload_file' },
@@ -253,7 +253,7 @@ export default function PanduanPage() {
                 key={item.href} 
                 href={item.href} 
                 className={`flex-1 flex flex-col items-center py-2.5 transition-colors relative ${
-                  isActive ? 'text-[#fe802f]' : 'text-[#83a69c] opacity-80 hover:opacity-100'
+                  isActive ? 'text-secondary-container' : 'text-primary-fixed-dim opacity-80 hover:opacity-100'
                 }`}
               >
                 <span 
@@ -263,7 +263,7 @@ export default function PanduanPage() {
                   {item.icon}
                 </span>
                 {item.label === 'Pesan' && (
-                  <span className="absolute top-2.5 right-6 w-2 h-2 bg-red-500 rounded-full border border-[#01261f]"></span>
+                  <span className="absolute top-2.5 right-6 w-2 h-2 bg-red-500 rounded-full border border-primary"></span>
                 )}
                 <span className={`text-[9px] mt-0.5 ${isActive ? 'font-bold' : 'font-medium'}`}>{item.label}</span>
               </Link>

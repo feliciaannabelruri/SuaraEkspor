@@ -8,21 +8,37 @@ export function useVoiceRecorder() {
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const isRecordingActiveRef = useRef(false);
 
   const startRecording = useCallback(async () => {
+    if (isRecordingActiveRef.current) return;
+    isRecordingActiveRef.current = true;
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      
+      // If the user released the button while we were waiting for mic access
+      if (!isRecordingActiveRef.current) {
+        stream.getTracks().forEach((t) => t.stop());
+        return;
+      }
+
       const mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
       mediaRecorderRef.current = mediaRecorder;
       chunksRef.current = [];
 
       mediaRecorder.ondataavailable = (e) => {
-        if (e.data.size > 0) chunksRef.current.push(e.data);
+        if (e.data && e.data.size > 0) {
+          chunksRef.current.push(e.data);
+        }
       };
 
       mediaRecorder.onstop = () => {
         const blob = new Blob(chunksRef.current, { type: 'audio/webm' });
-        setAudioBlob(blob);
+        if (blob.size > 0) {
+          setAudioBlob(blob);
+        } else {
+          setAudioBlob(null);
+        }
         stream.getTracks().forEach((t) => t.stop());
       };
 
@@ -31,17 +47,21 @@ export function useVoiceRecorder() {
       setDuration(0);
       timerRef.current = setInterval(() => setDuration((d) => d + 1), 1000);
     } catch (err) {
+      isRecordingActiveRef.current = false;
       console.error('Mikrofon tidak dapat diakses:', err);
       throw new Error('Izin mikrofon diperlukan');
     }
   }, []);
 
   const stopRecording = useCallback(() => {
-    if (mediaRecorderRef.current?.state === 'recording') {
+    isRecordingActiveRef.current = false;
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
       mediaRecorderRef.current.stop();
     }
     setIsRecording(false);
-    if (timerRef.current) clearInterval(timerRef.current);
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+    }
   }, []);
 
   const resetRecording = useCallback(() => {

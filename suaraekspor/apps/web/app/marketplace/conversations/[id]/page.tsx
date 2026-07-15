@@ -119,14 +119,14 @@ export default function BuyerConversationPage() {
   const messages = conversation?.messages ?? [];
 
   return (
-    <div className="flex flex-col h-screen bg-[#FDF0E8] text-[#1c1b1b] font-body-md overflow-hidden">
+    <div className="flex flex-col h-screen bg-background text-on-background font-body-md overflow-hidden">
 
       {/* MAIN CONTENT AREA */}
       <div className="flex-1 flex overflow-hidden relative">
         {/* Chat Container */}
-        <div className="flex-1 flex flex-col min-w-0 bg-[#FDF0E8]">
+        <div className="flex-1 flex flex-col min-w-0 bg-background">
           {/* Header Bar */}
-          <header className="h-20 bg-white flex items-center justify-between px-4 md:px-8 border-b border-[#c1c8c4]/20 z-10">
+          <header className="h-20 bg-white flex items-center justify-between px-4 md:px-8 border-b border-outline-variant/20 z-10">
             <div className="flex items-center gap-4">
               <button onClick={() => router.back()} className="flex items-center gap-1 text-gray-500 hover:text-gray-700 transition-colors mr-2">
                 <ChevronLeft size={20} />
@@ -138,7 +138,7 @@ export default function BuyerConversationPage() {
                 </div>
 
                 <div>
-                  <h1 className="text-[#0F4A33] font-bold text-sm md:text-base flex items-center gap-1">
+                  <h1 className="text-primary font-bold text-sm md:text-base flex items-center gap-1">
                     {sellerName}
                     <span className="material-symbols-outlined text-[16px] opacity-70">{showProfile ? 'expand_less' : 'expand_more'}</span>
                   </h1>
@@ -150,7 +150,7 @@ export default function BuyerConversationPage() {
             <div className="flex items-center gap-3">
               <button
                 onClick={() => setShowProfile(!showProfile)}
-                className={`w-10 h-10 flex items-center justify-center rounded-full border border-gray-200 bg-white hover:bg-gray-50 shadow-sm transition-colors ${showProfile ? 'bg-gray-100 text-[#0F4A33]' : 'text-gray-600'}`}
+                className={`w-10 h-10 flex items-center justify-center rounded-full border border-gray-200 bg-white hover:bg-gray-50 shadow-sm transition-colors ${showProfile ? 'bg-gray-100 text-primary' : 'text-gray-600'}`}
               >
                 <span className="material-symbols-outlined text-[20px]">account_circle</span>
               </button>
@@ -173,9 +173,9 @@ export default function BuyerConversationPage() {
                     <div className="max-w-[85%] md:max-w-[70%] flex flex-col items-end">
                       <div className="flex items-center gap-2 mb-1.5">
                         <span className="text-gray-400 text-[10px]">{formatTime(m.createdAt)}</span>
-                        <span className="text-[#0F4A33] font-bold text-xs">You</span>
+                        <span className="text-primary font-bold text-xs">You</span>
                       </div>
-                      <div className="bg-[#1a3c34] text-white rounded-2xl rounded-tr-none p-4 text-[14px] leading-relaxed shadow-md">
+                      <div className="bg-primary text-white rounded-2xl rounded-tr-none p-4 text-[14px] leading-relaxed shadow-md">
                         {m.originalText}
                         <div className="flex items-center gap-1 mt-2 justify-end opacity-70">
                           <CheckCheck size={14} className="text-[#7EE8BC]" />
@@ -191,7 +191,7 @@ export default function BuyerConversationPage() {
                       <span className="text-gray-700 font-bold text-xs">{sellerName} (Seller)</span>
                       <span className="text-gray-400 text-[10px]">{formatTime(m.createdAt)}</span>
                     </div>
-                    <div className="bg-white border border-[#c1c8c4]/30 rounded-2xl rounded-tl-none p-4 text-gray-800 text-[14px] leading-relaxed shadow-sm">
+                    <div className="bg-white border border-outline-variant/30 rounded-2xl rounded-tl-none p-4 text-gray-800 text-[14px] leading-relaxed shadow-sm">
                       {m.translatedText || m.originalText}
                     </div>
                   </div>
@@ -202,23 +202,23 @@ export default function BuyerConversationPage() {
           </div>
 
           {/* Input Footer Area */}
-          <footer className="bg-white px-4 md:px-8 py-4 md:py-6 border-t border-[#c1c8c4]/30">
+          <footer className="bg-white px-4 md:px-8 py-4 md:py-6 border-t border-outline-variant/30">
             {/* Input Area */}
             <div className="flex items-end gap-3">
-              <div className="flex-1 bg-[#f6f3f2] rounded-2xl border border-[#c1c8c4]/50 focus-within:border-[#fe802f] transition-colors px-3 md:px-4 py-2 md:py-3 flex flex-col">
+              <div className="flex-1 bg-[#f6f3f2] rounded-2xl border border-outline-variant/50 focus-within:border-secondary-container transition-colors px-3 md:px-4 py-2 md:py-3 flex flex-col">
                 <textarea
                   value={replyText}
                   onChange={e => setReplyText(e.target.value)}
                   onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); } }}
-                  className="bg-transparent border-none focus:ring-0 text-[#1c1b1b] placeholder:text-[#414846]/50 resize-none w-full text-body-md py-1 outline-none"
+                  className="bg-transparent border-none focus:ring-0 text-on-background placeholder:text-gray-600/50 resize-none w-full text-body-md py-1 outline-none"
                   placeholder={sending ? 'Mengirim...' : 'Ketik pesan...'}
                   rows={1}
                   disabled={sending || !conversationId}
                 />
-                <div className="flex items-center justify-between mt-2 pt-2 border-t border-[#c1c8c4]/10">
+                <div className="flex items-center justify-between mt-2 pt-2 border-t border-outline-variant/10">
                   <div className="flex items-center gap-4 text-gray-500">
-                    <button className="hover:text-[#fe802f] transition-colors"><span className="material-symbols-outlined text-xl">attach_file</span></button>
-                    <button className="hover:text-[#fe802f] transition-colors"><span className="material-symbols-outlined text-xl">image</span></button>
+                    <button className="hover:text-secondary-container transition-colors"><span className="material-symbols-outlined text-xl">attach_file</span></button>
+                    <button className="hover:text-secondary-container transition-colors"><span className="material-symbols-outlined text-xl">image</span></button>
                   </div>
                   <span className="text-[10px] text-gray-400">SHIFT + ENTER for new line</span>
                 </div>
@@ -227,7 +227,7 @@ export default function BuyerConversationPage() {
                 <button
                   onClick={handleSend}
                   disabled={!replyText.trim() || sending || !conversationId}
-                  className="w-12 h-12 flex items-center justify-center rounded-xl bg-[#83a69c] text-white shadow-lg hover:bg-[#43655c] active:scale-95 transition-all disabled:opacity-40"
+                  className="w-12 h-12 flex items-center justify-center rounded-xl bg-primary-fixed-dim text-white shadow-lg hover:bg-[#43655c] active:scale-95 transition-all disabled:opacity-40"
                 >
                   <span className="material-symbols-outlined">{sending ? 'hourglass_empty' : 'send'}</span>
                 </button>
@@ -245,7 +245,7 @@ export default function BuyerConversationPage() {
         )}
 
         {/* Right Panel: Profil Penjual (Drawer) */}
-        <div className={`absolute right-0 top-0 bottom-0 w-80 bg-white border-l border-[#c1c8c4]/20 overflow-y-auto custom-scrollbar z-50 shadow-2xl transition-transform duration-300 ${showProfile ? 'translate-x-0' : 'translate-x-full'}`}>
+        <div className={`absolute right-0 top-0 bottom-0 w-80 bg-white border-l border-outline-variant/20 overflow-y-auto custom-scrollbar z-50 shadow-2xl transition-transform duration-300 ${showProfile ? 'translate-x-0' : 'translate-x-full'}`}>
           <div className="p-6">
             <div className="flex items-center justify-between mb-6">
               <h3 className="font-bold text-gray-900 text-sm uppercase tracking-wider">Seller Profile</h3>
@@ -254,7 +254,7 @@ export default function BuyerConversationPage() {
               </button>
             </div>
             <div className="flex flex-col items-center text-center mb-8">
-              <div className="w-20 h-20 rounded-full overflow-hidden border border-[#c1c8c4]/30 mb-3 bg-[#0F4A33] text-white flex items-center justify-center text-2xl font-bold">
+              <div className="w-20 h-20 rounded-full overflow-hidden border border-outline-variant/30 mb-3 bg-primary text-white flex items-center justify-center text-2xl font-bold">
                 {sellerName.charAt(0).toUpperCase()}
               </div>
               <h4 className="font-bold text-lg leading-tight text-gray-900">{sellerName}</h4>
@@ -263,7 +263,7 @@ export default function BuyerConversationPage() {
             <div className="space-y-6">
               <div>
                 <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">Product of Interest</p>
-                <div className="border border-[#c1c8c4]/30 rounded-xl p-3 flex gap-3 items-center">
+                <div className="border border-outline-variant/30 rounded-xl p-3 flex gap-3 items-center">
                   <div className="flex-1 min-w-0">
                     <p className="text-xs font-bold text-gray-900 truncate">{productTitle}</p>
                   </div>

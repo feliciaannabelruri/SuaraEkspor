@@ -39,18 +39,39 @@ export async function runAIPipeline(
     let sttResult = null;
     if (audioFilePath) {
       await updatePipelineStage(productId, 'stt', 25);
-      sttResult = await transcribeAudio(audioFilePath);
+      try {
+        sttResult = await transcribeAudio(audioFilePath);
 
-      const audioUrl = await uploadAudioFile(audioFilePath);
-      await prisma.product.update({
-        where: { id: productId },
-        data: {
-          originalTranscript: sttResult.transcript,
-          detectedLanguage: sttResult.detectedLanguage,
-          originalAudioUrl: audioUrl,
-        },
-      });
-      fs.unlinkSync(audioFilePath);
+        // Upload audio for playback regardless of STT success
+        const audioUrl = await uploadAudioFile(audioFilePath);
+        await prisma.product.update({
+          where: { id: productId },
+          data: {
+            originalTranscript: sttResult.transcript,
+            detectedLanguage: sttResult.detectedLanguage,
+            originalAudioUrl: audioUrl,
+          },
+        });
+      } catch (sttErr) {
+        // STT failed (bad format, codec, etc) — log and continue with vision-only
+        const sttErrMsg = sttErr instanceof Error ? sttErr.message : String(sttErr);
+        console.warn(`[AI Pipeline] STT gagal untuk produk ${productId}, lanjut tanpa transkripsi: ${sttErrMsg}`);
+
+        // Still try to upload audio so user can play it back, but don't block pipeline
+        try {
+          const audioUrl = await uploadAudioFile(audioFilePath);
+          await prisma.product.update({
+            where: { id: productId },
+            data: { originalAudioUrl: audioUrl, originalTranscript: '[Transkripsi gagal — format audio tidak didukung]' },
+          });
+        } catch (_uploadErr) {
+          // Audio upload also failed, skip silently
+        }
+        sttResult = null; // Continue pipeline without STT
+      } finally {
+        // Always clean up temp file
+        try { fs.unlinkSync(audioFilePath); } catch (_) {}
+      }
     }
 
     // --- STAGE 3: Vision — Analisis foto produk ---
@@ -108,7 +129,7 @@ export async function runAIPipeline(
         recommendedPriceUsd: pricingResult.recommendedPriceUsd,
         priceRangeMin: pricingResult.priceRangeUsd.min,
         priceRangeMax: pricingResult.priceRangeUsd.max,
-        status: 'active',
+        status: 'inactive',
         aiPipelineStage: 'done',
       },
     });

@@ -45,10 +45,16 @@ function VerifyContent() {
     setLoading(true);
     setError('');
     try {
-      const { data } = await apiClient.post('/auth/otp/verify', { phone, otp: otpValue });
+      const { data } = await apiClient.post('/auth/otp/verify', { phone, otp: otpValue, role });
       localStorage.setItem('se_token', data.data.token);
       localStorage.setItem('se_user', JSON.stringify(data.data.user));
-      router.push(role === 'seller' ? '/dashboard' : '/marketplace');
+      
+      const hasName = !!data.data.user?.name;
+      if (role === 'seller') {
+        router.push(hasName ? '/dashboard' : '/onboarding');
+      } else {
+        router.push(hasName ? '/' : '/buyer-onboarding');
+      }
     } catch (e: any) {
       setError(e.response?.data?.error ?? 'OTP tidak valid');
     } finally {
@@ -123,14 +129,14 @@ function VerifyContent() {
 
           <form className="space-y-6 md:space-y-8" onSubmit={handleVerify}>
             {/* OTP Inputs */}
-            <div className="flex justify-between gap-1 sm:gap-2 md:gap-4">
+            <div className="flex justify-center gap-2 sm:gap-3">
               {otp.map((digit, index) => (
                 <input
                   key={index}
                   ref={(el) => { inputRefs.current[index] = el; }}
                   type="text"
                   maxLength={1}
-                  className="w-10 h-12 sm:w-12 sm:h-14 md:w-14 md:h-16 text-center text-xl md:text-2xl font-bold bg-surface-container-low border border-outline-variant focus:border-primary focus:ring-1 focus:ring-primary rounded-lg transition-all outline-none"
+                  className="flex-1 max-w-[46px] sm:max-w-[56px] aspect-[4/5] text-center text-xl md:text-2xl font-bold bg-surface-container-low border border-outline-variant focus:border-primary focus:ring-1 focus:ring-primary rounded-lg transition-all outline-none"
                   value={digit}
                   onChange={(e) => handleChange(index, e.target.value)}
                   onKeyDown={(e) => handleKeyDown(index, e)}

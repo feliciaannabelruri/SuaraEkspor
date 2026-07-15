@@ -9,6 +9,10 @@ import Sidebar from '../../components/layout/Sidebar';
 import MobileProfileMenu from '../../components/layout/MobileProfileMenu';
 import apiClient from '@/lib/api-client';
 import { useMiddleman } from "../context/middleman-context";
+import LoadingSpinner from '../../components/ui/LoadingSpinner';
+import ErrorState from '../../components/ui/ErrorState';
+import EmptyState from '../../components/ui/EmptyState';
+import MobileBottomNav from '../../components/layout/MobileBottomNav';
 
 interface ConversationMessage {
   id: string;
@@ -65,6 +69,7 @@ export default function ConversationsPage() {
 
     let cancelled = false;
     async function load() {
+      setLoading(true);
       try {
         const res = await apiClient.get('/conversations');
         if (!cancelled) setConversations(res.data?.data ?? []);
@@ -76,7 +81,7 @@ export default function ConversationsPage() {
     }
     load();
     return () => { cancelled = true; };
-  }, [router]);
+  }, [router, isMiddleman, activeUMKM]);
 
   const withMessages = conversations.filter(c => c.messages?.length > 0).length;
   const aiReplied = conversations.filter(c => c.messages?.[0]?.aiGenerated).length;
@@ -90,13 +95,13 @@ export default function ConversationsPage() {
   });
 
   return (
-    <div className="flex min-h-screen bg-[#fdf0e8] text-[#1c1b1b] font-body-md overflow-x-hidden">
+    <div className="flex min-h-screen bg-background text-on-background font-body-md overflow-x-hidden">
 
       {/* DESKTOP SIDEBAR */}
       <Sidebar />
 
       {/* MAIN CONTENT */}
-      <main className="w-full md:w-[calc(100%-14rem)] md:ml-56 min-h-screen bg-[#fdf0e8] flex flex-col relative pb-24 md:pb-10">
+      <main className="w-full md:w-[calc(100%-14rem)] md:ml-56 min-h-screen bg-background flex flex-col relative pb-24 md:pb-10">
 
         {/* Top Navbar */}
         <header className="bg-white border-b border-gray-200 h-16 flex items-center justify-between px-6 md:px-8 sticky top-0 z-30">
@@ -125,8 +130,8 @@ export default function ConversationsPage() {
           </header>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4 mt-1">
-            <div className="bg-white border border-[#E5D5CB] p-4 rounded-xl flex items-center gap-3 hover:border-[#0F4A33] transition-all shadow-sm">
-              <div className="w-10 h-10 rounded-lg bg-[#c5eadf] flex items-center justify-center text-[#0F4A33]">
+            <div className="bg-white border border-gray-200 p-4 rounded-xl flex items-center gap-3 hover:border-primary transition-all shadow-sm">
+              <div className="w-10 h-10 rounded-lg bg-primary-fixed-dim/30 flex items-center justify-center text-primary">
                 <span className="material-symbols-outlined text-[20px]">forum</span>
               </div>
               <div>
@@ -134,8 +139,8 @@ export default function ConversationsPage() {
                 <p className="text-gray-500 text-[10px] font-bold uppercase tracking-wider mt-1">Total Percakapan</p>
               </div>
             </div>
-            <div className="bg-white border border-[#E5D5CB] p-4 rounded-xl flex items-center gap-3 hover:border-[#0F4A33] transition-all shadow-sm">
-              <div className="w-10 h-10 rounded-lg bg-[#ffdbca] flex items-center justify-center text-[#9c4400]">
+            <div className="bg-white border border-gray-200 p-4 rounded-xl flex items-center gap-3 hover:border-primary transition-all shadow-sm">
+              <div className="w-10 h-10 rounded-lg bg-secondary-container/10 flex items-center justify-center text-secondary-container">
                 <span className="material-symbols-outlined text-[20px]" style={{ fontVariationSettings: "'FILL' 1" }}>chat</span>
               </div>
               <div>
@@ -143,8 +148,8 @@ export default function ConversationsPage() {
                 <p className="text-gray-500 text-[10px] font-bold uppercase tracking-wider mt-1">Ada Pesan</p>
               </div>
             </div>
-            <div className="bg-white border border-[#E5D5CB] p-4 rounded-xl flex items-center gap-3 hover:border-[#0F4A33] transition-all shadow-sm">
-              <div className="w-10 h-10 rounded-lg bg-[#b0f2b7] flex items-center justify-center text-[#0F4A33]">
+            <div className="bg-white border border-gray-200 p-4 rounded-xl flex items-center gap-3 hover:border-primary transition-all shadow-sm">
+              <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
                 <span className="material-symbols-outlined text-[20px]">auto_awesome</span>
               </div>
               <div>
@@ -161,7 +166,7 @@ export default function ConversationsPage() {
               <input
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
-                className="w-full bg-white border border-gray-200 shadow-sm rounded-full py-2 pl-10 pr-4 text-xs focus:ring-2 focus:ring-[#0F4A33] focus:border-transparent outline-none transition-all"
+                className="w-full bg-white border border-gray-200 shadow-sm rounded-full py-2 pl-10 pr-4 text-xs focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all"
                 placeholder="Cari buyer atau produk..."
               />
             </div>
@@ -170,22 +175,23 @@ export default function ConversationsPage() {
           {/* Conversation List */}
           <div className="space-y-3">
             {loading && (
-              <div className="text-center py-10 md:py-16 bg-white rounded-xl border border-gray-200">
-                <p className="text-gray-400 text-xs md:text-sm font-medium">Memuat percakapan...</p>
+              <div className="py-10 bg-white rounded-xl border border-gray-200">
+                <LoadingSpinner label="Memuat percakapan..." />
               </div>
             )}
 
             {!loading && error && (
-              <div className="text-center py-10 md:py-16 bg-white rounded-xl border border-red-200">
-                <p className="text-red-500 text-xs md:text-sm font-medium">{error}</p>
+              <div className="py-10 bg-white rounded-xl border border-gray-200">
+                <ErrorState title="Gagal Memuat" message={error} />
               </div>
             )}
 
             {!loading && !error && filtered.length === 0 && (
-              <div className="text-center py-10 md:py-16 bg-white rounded-xl border border-gray-200">
-                <span className="material-symbols-outlined text-gray-300 text-4xl md:text-5xl mb-2">forum</span>
-                <p className="text-gray-400 text-xs md:text-sm font-medium">Belum ada percakapan</p>
-              </div>
+              <EmptyState
+                icon="forum"
+                title="Belum ada percakapan"
+                description={searchQuery ? 'Tidak ada percakapan yang cocok dengan pencarian Anda.' : 'Pesan dari buyer akan muncul di sini.'}
+              />
             )}
 
             {!loading && !error && filtered.map(c => {
@@ -200,19 +206,19 @@ export default function ConversationsPage() {
               return (
                 <div key={c.id}
                   onClick={() => router.push(`/conversations/${c.id}`)}
-                  className="bg-white rounded-xl p-4 md:p-5 border border-gray-200 cursor-pointer hover:border-[#0F4A33] hover:shadow-md transition-all shadow-sm group">
+                  className="bg-white rounded-xl p-4 md:p-5 border border-gray-200 cursor-pointer hover:border-primary hover:shadow-md transition-all shadow-sm group">
 
                   <div className="flex flex-col md:flex-row justify-between gap-4 md:gap-5">
                     <div className="flex gap-3 flex-1">
-                      <div className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-[#fdf0e8] border border-gray-100 flex items-center justify-center text-sm md:text-base font-bold text-[#0F4A33] flex-shrink-0 relative">
+                      <div className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-background border border-gray-100 flex items-center justify-center text-sm md:text-base font-bold text-primary flex-shrink-0 relative">
                         {buyerName.charAt(0).toUpperCase()}
                       </div>
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-1">
-                          <h3 className="font-bold text-[14px] md:text-[16px] text-gray-900 leading-tight group-hover:text-[#0F4A33] transition-colors">{buyerName}</h3>
+                          <h3 className="font-bold text-[14px] md:text-[16px] text-gray-900 leading-tight group-hover:text-primary transition-colors">{buyerName}</h3>
                           <span className="md:hidden ml-auto text-[9px] text-gray-400 font-medium">{relativeTime(lastMsgTime)}</span>
                         </div>
-                        <p className="text-[#fe802f] font-bold text-[10px] md:text-[11px] mb-1.5 truncate">{productTitle}</p>
+                        <p className="text-secondary-container font-bold text-[10px] md:text-[11px] mb-1.5 truncate">{productTitle}</p>
                         <p className="text-gray-600 text-xs md:text-sm line-clamp-2 italic mb-3 leading-relaxed">"{lastMsgText}"</p>
                       </div>
                     </div>
@@ -232,36 +238,7 @@ export default function ConversationsPage() {
         </div>
 
         {/* BOTTOM NAV (MOBILE ONLY) */}
-        <nav className="md:hidden fixed bottom-0 left-0 w-full bg-[#01261f] border-t border-[#83a69c]/10 flex pb-safe z-50 shadow-lg">
-          {[
-            { label: 'Produk', href: '/dashboard', icon: 'inventory_2' },
-            { label: 'Upload', href: '/upload', icon: 'upload_file' },
-            { label: 'Pesan', href: '/conversations', icon: 'forum' },
-            { label: 'WhatsApp', href: '/whatsapp', icon: 'chat' },
-            { label: 'Panduan', href: '/panduan', icon: 'menu_book' }
-          ].map((item) => {
-            const isActive = item.href === '/dashboard'
-              ? (pathname === '/dashboard' || (pathname && pathname.startsWith('/product')))
-              : (pathname === item.href || (pathname && pathname.startsWith(item.href)));
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={`flex-1 flex flex-col items-center py-2.5 transition-colors relative ${
-                  isActive ? 'text-[#fe802f]' : 'text-[#83a69c] opacity-80 hover:opacity-100'
-                }`}
-              >
-                <span
-                  className="material-symbols-outlined text-[20px]"
-                  style={{ fontVariationSettings: isActive ? "'FILL' 1" : "'FILL' 0" }}
-                >
-                  {item.icon}
-                </span>
-                <span className={`text-[9px] mt-0.5 ${isActive ? 'font-bold' : 'font-medium'}`}>{item.label}</span>
-              </Link>
-            );
-          })}
-        </nav>
+        <MobileBottomNav unreadMessagesCount={withMessages} />
       </main>
     </div>
   );

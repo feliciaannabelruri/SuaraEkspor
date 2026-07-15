@@ -21,9 +21,13 @@ export default function MobileProfileMenu() {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  const initial = isMiddleman && activeUMKM ? activeUMKM.name.charAt(0) : 'PB';
+  const initial = isMiddleman && activeUMKM 
+    ? activeUMKM.name.charAt(0).toUpperCase() 
+    : 'PB';
   const name = isMiddleman && activeUMKM ? activeUMKM.name : 'Pak Budi';
-  const category = isMiddleman && activeUMKM ? activeUMKM.category : 'Batik Pekalongan';
+  const category = isMiddleman && activeUMKM 
+    ? (activeUMKM.businessName || activeUMKM.province || 'Mode Middleman') 
+    : 'Batik Pekalongan';
 
   const drawerContent = isOpen && (
     <div
@@ -33,7 +37,7 @@ export default function MobileProfileMenu() {
     >
       {/* Drawer Panel */}
       <div
-        className="bg-[#01261f] w-72 h-full p-6 flex flex-col justify-between shadow-2xl relative animate-in slide-in-from-right duration-300 overflow-y-auto"
+        className="bg-primary w-72 h-full p-6 flex flex-col justify-between shadow-2xl relative animate-in slide-in-from-right duration-300 overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
         <div>
@@ -86,6 +90,15 @@ export default function MobileProfileMenu() {
           </button>
 
           <Link
+            href="/profile"
+            onClick={() => setIsOpen(false)}
+            className="w-full py-3 px-4 rounded-xl text-xs font-semibold bg-[#fe802f] text-white hover:opacity-95 transition-all flex items-center justify-center gap-2"
+          >
+            <span className="material-symbols-outlined text-[18px]">person</span>
+            Edit Profil Saya
+          </Link>
+
+          <Link
             href="/"
             onClick={() => setIsOpen(false)}
             className="w-full py-3 px-4 rounded-xl text-xs font-semibold bg-white/10 text-white hover:bg-white/15 transition-all flex items-center justify-center gap-2 border border-white/5"
@@ -103,7 +116,7 @@ export default function MobileProfileMenu() {
       {/* Trigger Button */}
       <button
         onClick={() => setIsOpen(true)}
-        className="md:hidden flex items-center justify-center w-8 h-8 rounded-full bg-[#0F4A33] text-white font-bold text-xs shadow-sm border border-gray-100 hover:opacity-90 active:scale-95 transition-all cursor-pointer"
+        className="md:hidden flex items-center justify-center w-8 h-8 rounded-full bg-primary text-white font-bold text-xs shadow-sm border border-gray-100 hover:opacity-90 active:scale-95 transition-all cursor-pointer"
       >
         {initial}
       </button>

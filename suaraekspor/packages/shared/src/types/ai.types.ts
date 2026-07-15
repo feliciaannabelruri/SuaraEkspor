@@ -7,6 +7,7 @@ export interface STTResult {
 
 export interface VisionResult {
   productType: string;
+  productDescription: string;
   condition: string;
   visualFeatures: string[];
   estimatedCategory: string;

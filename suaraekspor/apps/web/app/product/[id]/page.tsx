@@ -8,6 +8,9 @@ import { useMiddleman } from "../../context/middleman-context";
 import Sidebar from '../../../components/layout/Sidebar';
 import MobileProfileMenu from '../../../components/layout/MobileProfileMenu';
 import apiClient from '../../../lib/api-client';
+import LoadingSpinner from '../../../components/ui/LoadingSpinner';
+import ErrorState from '../../../components/ui/ErrorState';
+import MobileBottomNav from '../../../components/layout/MobileBottomNav';
 
 interface ProductListing {
   languageCode: string;
@@ -162,20 +165,20 @@ export default function ProductDetail() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="w-10 h-10 border-4 border-gray-200 border-t-[#0F4A33] rounded-full animate-spin" />
+      <div className="min-h-screen bg-background py-24">
+        <LoadingSpinner label="Memuat produk..." size="lg" />
       </div>
     );
   }
 
   if (loadError || !product) {
     return (
-      <div className="min-h-screen bg-background flex flex-col items-center justify-center gap-4 text-gray-500">
-        <span className="material-symbols-outlined text-6xl text-gray-300">inventory_2</span>
-        <p className="text-lg font-semibold">{loadError || 'Produk tidak ditemukan'}</p>
-        <button onClick={() => router.push('/dashboard')} className="px-6 py-2 bg-primary text-on-primary font-bold rounded-lg">
-          Kembali ke Dashboard
-        </button>
+      <div className="min-h-screen bg-background py-24">
+        <ErrorState 
+          title="Produk Tidak Ditemukan" 
+          message={loadError || 'Produk tidak ditemukan.'} 
+          onRetry={() => router.push('/dashboard')}
+        />
       </div>
     );
   }
@@ -194,7 +197,7 @@ export default function ProductDetail() {
       <Sidebar />
 
       {/* Main Content Area */}
-      <main className="flex-1 md:ml-56 bg-[#fdf0e8] min-h-screen flex flex-col overflow-y-auto pb-24 md:pb-0">
+      <main className="flex-1 md:ml-56 bg-background min-h-screen flex flex-col overflow-y-auto pb-24 md:pb-0">
         {/* Top Navbar */}
         <header className="bg-white border-b border-gray-200 h-16 flex items-center justify-between px-6 md:px-8 sticky top-0 z-30">
           <div>
@@ -206,7 +209,7 @@ export default function ProductDetail() {
             <div className="hidden md:flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-md px-3 py-1.5 shadow-sm">
               <span className="text-[9px] font-bold text-gray-500 tracking-wider uppercase">Export Score</span>
               <div className="flex items-baseline gap-0.5">
-                <span className="text-base font-bold text-[#0F4A33]">{score}</span>
+                <span className="text-base font-bold text-primary">{score}</span>
                 <span className="text-[10px] text-gray-400 font-bold">/ 100</span>
               </div>
             </div>
@@ -564,39 +567,7 @@ export default function ProductDetail() {
         </section>
 
         {/* MOBILE BOTTOM NAV */}
-        <nav className="md:hidden fixed bottom-0 left-0 w-full bg-[#01261f] border-t border-[#83a69c]/10 flex z-50 pb-safe shadow-lg">
-          {[
-            { label: 'Produk', href: '/dashboard', icon: 'inventory_2' },
-            { label: 'Upload', href: '/upload', icon: 'upload_file' },
-            { label: 'Pesan', href: '/conversations', icon: 'forum' },
-            { label: 'WhatsApp', href: '/whatsapp', icon: 'chat' },
-            { label: 'Panduan', href: '/panduan', icon: 'menu_book' }
-          ].map((item) => {
-            const isActive = item.href === '/dashboard' 
-              ? (pathname === '/dashboard' || (pathname && pathname.startsWith('/product')))
-              : (pathname === item.href || (pathname && pathname.startsWith(item.href)));
-            return (
-              <Link 
-                key={item.href} 
-                href={item.href} 
-                className={`flex-1 flex flex-col items-center py-2.5 transition-colors relative ${
-                  isActive ? 'text-[#fe802f]' : 'text-[#83a69c] opacity-80 hover:opacity-100'
-                }`}
-              >
-                <span 
-                  className="material-symbols-outlined text-[20px]" 
-                  style={{ fontVariationSettings: isActive ? "'FILL' 1" : "'FILL' 0" }}
-                >
-                  {item.icon}
-                </span>
-                {item.label === 'Pesan' && (
-                  <span className="absolute top-2.5 right-6 w-2 h-2 bg-red-500 rounded-full border border-[#01261f]"></span>
-                )}
-                <span className={`text-[9px] mt-0.5 ${isActive ? 'font-bold' : 'font-medium'}`}>{item.label}</span>
-              </Link>
-            );
-          })}
-        </nav>
+        <MobileBottomNav />
       </main>
     </div>
   );

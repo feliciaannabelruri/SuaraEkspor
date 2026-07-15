@@ -1,4 +1,5 @@
 import 'dotenv/config';
+console.log("INDEX.TS START: GROQ API KEY IS", process.env.GROQ_API_KEY);
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
@@ -24,6 +25,15 @@ app.use(express.urlencoded({ extended: true }));
 app.use('/audio', express.static(env.AUDIO_OUTPUT_DIR));
 
 app.use('/api/v1', routes);
+
+// Error handler middleware
+app.use((err: any, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
+  console.error('[Express Error]', err);
+  return res.status(err.status || 400).json({
+    success: false,
+    error: err.message || 'Terjadi kesalahan pada server',
+  });
+});
 
 app.listen(parseInt(env.PORT), () => {
   console.log(`SuaraEkspor API running on http://localhost:${env.PORT}`);

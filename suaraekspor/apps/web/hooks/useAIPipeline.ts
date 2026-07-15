@@ -18,7 +18,13 @@ export function useAIPipeline(productId: string | null) {
     try {
       const { data } = await apiClient.get(`/products/${productId}/status`);
       const status = data.data;
-      setPipelineStatus(status);
+      const mappedStatus = {
+        stage: status.aiPipelineStage || 'pending',
+        progress: status.progress || 0,
+        status: status.status,
+        pipelineError: status.pipelineError
+      };
+      setPipelineStatus(mappedStatus);
       if (status.aiPipelineStage === 'done') {
         setIsComplete(true);
         return true; // Stop polling

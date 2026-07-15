@@ -10,7 +10,7 @@ function LoginContent() {
   const [error, setError] = useState('');
   const router = useRouter();
   const params = useSearchParams();
-  const role = params.get('role') ?? 'seller';
+  const [role, setRole] = useState(params.get('role') ?? 'seller');
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -35,6 +35,7 @@ function LoginContent() {
       setLoading(false);
     }
   };
+
 
   return (
     <>
@@ -87,12 +88,39 @@ function LoginContent() {
         </section>
 
         {/* Right Column: Login Action */}
-        <section className="w-full md:w-1/2 bg-white md:bg-[#FDF0E8] flex flex-col items-center justify-start md:justify-center p-6 md:p-16 -mt-8 md:mt-0 relative z-20 rounded-t-3xl md:rounded-none min-h-[60vh] md:min-h-0">
+        <section className="w-full md:w-1/2 bg-white md:bg-background flex flex-col items-center justify-start md:justify-center p-6 md:p-16 -mt-8 md:mt-0 relative z-20 rounded-t-3xl md:rounded-none min-h-[60vh] md:min-h-0">
           <div className="w-full max-w-md bg-white md:p-8 rounded-none md:rounded-xl border-none md:border md:border-outline-variant/30 shadow-none md:shadow-sm">
-            <div className="text-center md:text-left mb-6 md:mb-8 mt-2 md:mt-0">
+            <div className="text-center md:text-left mb-6 mt-2 md:mt-0">
               <h2 className="font-headline-sm md:text-headline-md text-primary mb-1 md:mb-2">Masuk ke SuaraEkspor</h2>
-              <p className="font-body-md text-sm md:text-base text-on-surface-variant">Masukkan nomor WhatsApp Anda untuk melanjutkan.</p>
+              <p className="font-body-md text-xs md:text-sm text-on-surface-variant">Pilih tipe akun Anda di bawah untuk melanjutkan.</p>
             </div>
+
+            {/* Role Switcher */}
+            <div className="flex bg-[#F5E6DD] p-1 rounded-xl mb-6 border border-outline-variant/20">
+              <button
+                type="button"
+                onClick={() => { setRole('seller'); setError(''); }}
+                className={`flex-1 py-2.5 rounded-lg text-xs font-bold transition-all ${
+                  role === 'seller' 
+                    ? 'bg-primary text-white shadow-sm' 
+                    : 'text-primary/65 hover:text-primary hover:bg-white/40'
+                }`}
+              >
+                Penjual (UMKM)
+              </button>
+              <button
+                type="button"
+                onClick={() => { setRole('buyer'); setError(''); }}
+                className={`flex-1 py-2.5 rounded-lg text-xs font-bold transition-all ${
+                  role === 'buyer' 
+                    ? 'bg-primary text-white shadow-sm' 
+                    : 'text-primary/65 hover:text-primary hover:bg-white/40'
+                }`}
+              >
+                Pembeli (Buyer)
+              </button>
+            </div>
+
             <form className="space-y-5 md:space-y-6" onSubmit={handleLogin}>
               <div className="space-y-2">
                 <label className="font-label-caps text-xs text-on-surface-variant">NOMOR WHATSAPP</label>

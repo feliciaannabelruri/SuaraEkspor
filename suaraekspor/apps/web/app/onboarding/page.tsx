@@ -1,99 +1,254 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { CheckCircle } from 'lucide-react';
+import apiClient from '@/lib/api-client';
 
 const languages = [
   { code: 'id', label: 'Bahasa Indonesia', native: 'Bahasa Indonesia' },
-  { code: 'jv', label: 'Jawa', native: 'Basa Jawa' },
-  { code: 'su', label: 'Sunda', native: 'Basa Sunda' },
-  { code: 'btk', label: 'Batak', native: 'Hata Batak' },
+  { code: 'jv', label: 'Bahasa Jawa', native: 'Basa Jawa' },
+  { code: 'su', label: 'Bahasa Sunda', native: 'Basa Sunda' },
+  { code: 'mad', label: 'Bahasa Madura', native: 'Basa Madura' },
+  { code: 'min', label: 'Bahasa Minangkabau', native: 'Baso Minang' },
+  { code: 'bug', label: 'Bahasa Bugis', native: 'Basa Ugi' },
+  { code: 'bjn', label: 'Bahasa Banjar', native: 'Bahasa Banjar' },
+  { code: 'ban', label: 'Bahasa Bali', native: 'Basa Bali' },
+  { code: 'btk', label: 'Bahasa Batak', native: 'Hata Batak' },
 ];
 
-const provinces = ['Jawa Tengah','Jawa Barat','Jawa Timur','DI Yogyakarta','Sumatera Utara','Sulawesi Selatan','Nusa Tenggara Timur','Bali','Lainnya'];
+const provinces = [
+  'Aceh',
+  'Bali',
+  'Banten',
+  'Bengkulu',
+  'DI Yogyakarta',
+  'DKI Jakarta',
+  'Gorontalo',
+  'Jambi',
+  'Jawa Barat',
+  'Jawa Tengah',
+  'Jawa Timur',
+  'Kalimantan Barat',
+  'Kalimantan Selatan',
+  'Kalimantan Tengah',
+  'Kalimantan Timur',
+  'Kalimantan Utara',
+  'Kepulauan Bangka Belitung',
+  'Kepulauan Riau',
+  'Lampung',
+  'Maluku',
+  'Maluku Utara',
+  'Nusa Tenggara Barat (NTB)',
+  'Nusa Tenggara Timur (NTT)',
+  'Papua',
+  'Papua Barat',
+  'Papua Barat Daya',
+  'Papua Pegunungan',
+  'Papua Selatan',
+  'Papua Tengah',
+  'Riau',
+  'Sulawesi Barat',
+  'Sulawesi Selatan',
+  'Sulawesi Tengah',
+  'Sulawesi Tenggara',
+  'Sulawesi Utara',
+  'Sumatera Barat',
+  'Sumatera Selatan',
+  'Sumatera Utara'
+];
 
 export default function OnboardingPage() {
   const router = useRouter();
   const [step, setStep] = useState(1);
   const [form, setForm] = useState({ name: '', business: '', province: '', language: 'id' });
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const userStr = localStorage.getItem('se_user');
+    if (userStr) {
+      try {
+        const u = JSON.parse(userStr);
+        if (u.name && u.role === 'seller') {
+          router.replace('/dashboard');
+        }
+      } catch (_) {}
+    }
+  }, [router]);
+
+  const handleSubmit = async () => {
+    setLoading(true);
+    try {
+      const resPatch = await apiClient.patch('/users/me', {
+        name: form.name || 'Pak Budi',
+        businessName: form.business || 'Batik Pekalongan',
+        province: form.province || 'Jawa Tengah',
+        localLanguage: form.language,
+      });
+      localStorage.setItem('se_user', JSON.stringify(resPatch.data?.data));
+      router.push('/dashboard');
+    } catch {
+      router.push('/dashboard');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
-    <div className="min-h-screen bg-[#F7F7F5]">
-      <div className="bg-[#0F4A33] px-5 pt-10 pb-6">
-        <div className="flex gap-2 mb-6">
-          {[1,2,3].map(i => (
-            <div key={i} className={`flex-1 h-1 rounded-full ${i <= step ? 'bg-[#7EE8BC]' : 'bg-white/20'}`} />
-          ))}
+    <main className="min-h-screen flex flex-col md:flex-row bg-white md:bg-transparent">
+      {/* Left Column: Brand Identity & Trust */}
+      <section className="w-full md:w-1/2 bg-primary-container relative flex flex-col px-6 pt-10 pb-16 md:p-16 overflow-hidden md:min-h-screen">
+        <div
+          className="absolute inset-0 batik-overlay mix-blend-soft-light opacity-30 pointer-events-none"
+          title="Batik Pattern"
+        ></div>
+
+        {/* Logo */}
+        <div className="relative z-10 flex justify-center md:justify-start">
+          <Link href="/">
+            <img
+              src="/images/SuaraEksporLogo.png"
+              alt="SuaraEkspor"
+              className="w-36 md:w-48 h-auto brightness-0 invert object-contain hover:opacity-80 transition-opacity"
+            />
+          </Link>
         </div>
-        <p className="text-[#A8D5C2] text-xs mb-1">Langkah {step} dari 3</p>
-        <h1 className="text-white text-xl font-bold">
-          {step === 1 && 'Siapa Anda?'}
-          {step === 2 && 'Dari mana Anda?'}
-          {step === 3 && 'Bahasa apa yang Anda gunakan?'}
-        </h1>
-      </div>
 
-      <div className="px-5 pt-6">
-        {step === 1 && (
-          <div className="flex flex-col gap-4">
-            <div>
-              <label className="text-sm font-semibold text-gray-700 mb-1 block">Nama Lengkap</label>
-              <input value={form.name} onChange={e => setForm({...form, name: e.target.value})}
-                placeholder="Pak Budi" className="w-full border border-gray-300 rounded-xl px-4 py-3 outline-none focus:border-green-600" />
-            </div>
-            <div>
-              <label className="text-sm font-semibold text-gray-700 mb-1 block">Nama Usaha</label>
-              <input value={form.business} onChange={e => setForm({...form, business: e.target.value})}
-                placeholder="Batik Slamet Pekalongan" className="w-full border border-gray-300 rounded-xl px-4 py-3 outline-none focus:border-green-600" />
-            </div>
+        {/* Heading */}
+        <div className="relative z-10 flex-1 flex flex-col justify-center mt-6 md:mt-0 mb-2 md:mb-0 text-center md:text-left">
+          <h1 className="text-[26px] sm:text-4xl md:text-[60px] leading-[1.2] md:leading-[1.1] tracking-tight font-bold text-white mb-3 md:mb-6">
+            Ekspor Lebih Mudah, <br className="hidden md:inline" />
+            Dimulai dari Sini.
+          </h1>
+          <p className="font-body-md md:font-body-lg text-[13px] md:text-lg text-on-primary-container max-w-lg mx-auto md:mx-0">
+            Bergabung dengan ribuan UMKM Indonesia yang sudah menjangkau pasar dunia.
+          </p>
+        </div>
+
+        {/* Trust Points */}
+        <div className="relative z-10 space-y-4 hidden md:block">
+          <div className="flex items-center gap-3">
+            <span className="material-symbols-outlined text-secondary-container" style={{ fontVariationSettings: "'FILL' 1" }}>check_circle</span>
+            <span className="font-body-md text-white">Gratis untuk UMKM</span>
           </div>
-        )}
-
-        {step === 2 && (
-          <div className="flex flex-col gap-3">
-            <label className="text-sm font-semibold text-gray-700 mb-1 block">Provinsi Anda</label>
-            {provinces.map(p => (
-              <button key={p} onClick={() => setForm({...form, province: p})}
-                className={`w-full text-left px-4 py-3 rounded-xl border font-medium text-sm flex items-center justify-between
-                  ${form.province === p ? 'border-green-600 bg-green-50 text-green-900' : 'border-gray-200 bg-white text-gray-700'}`}>
-                {p}
-                {form.province === p && <CheckCircle size={18} className="text-green-600" />}
-              </button>
-            ))}
+          <div className="flex items-center gap-3">
+            <span className="material-symbols-outlined text-secondary-container" style={{ fontVariationSettings: "'FILL' 1" }}>check_circle</span>
+            <span className="font-body-md text-white">Tanpa perlu bisa bahasa asing</span>
           </div>
-        )}
+          <div className="flex items-center gap-3">
+            <span className="material-symbols-outlined text-secondary-container" style={{ fontVariationSettings: "'FILL' 1" }}>check_circle</span>
+            <span className="font-body-md text-white">AI siap membantu 24/7</span>
+          </div>
+        </div>
+      </section>
 
-        {step === 3 && (
-          <div className="flex flex-col gap-3">
-            <p className="text-sm text-gray-500 mb-2">AI akan mengirim notifikasi suara dalam bahasa ini</p>
-            {languages.map(l => (
-              <button key={l.code} onClick={() => setForm({...form, language: l.code})}
-                className={`w-full text-left px-4 py-4 rounded-xl border flex items-center justify-between
-                  ${form.language === l.code ? 'border-green-600 bg-green-50' : 'border-gray-200 bg-white'}`}>
+      {/* Right Column: Onboarding Step Form */}
+      <section className="w-full md:w-1/2 bg-white md:bg-background flex flex-col items-center justify-start md:justify-center p-6 md:p-16 -mt-8 md:mt-0 relative z-20 rounded-t-3xl md:rounded-none min-h-[60vh] md:min-h-0">
+        <div className="w-full max-w-md bg-white md:p-8 rounded-none md:rounded-xl border-none md:border md:border-outline-variant/30 shadow-none md:shadow-sm">
+          
+          {/* Progress Header */}
+          <div className="mb-6">
+            <div className="flex gap-2 mb-3">
+              {[1, 2, 3].map(i => (
+                <div key={i} className={`flex-1 h-1 rounded-full ${i <= step ? 'bg-primary' : 'bg-gray-200'}`} />
+              ))}
+            </div>
+            <p className="text-gray-400 text-xs font-bold uppercase tracking-wider mb-1">Langkah {step} dari 3</p>
+            <h2 className="text-xl md:text-2xl font-bold text-primary">
+              {step === 1 && 'Siapa Anda?'}
+              {step === 2 && 'Dari mana Anda?'}
+              {step === 3 && 'Bahasa apa yang Anda gunakan?'}
+            </h2>
+          </div>
+
+          {/* Form Content */}
+          <div className="space-y-4">
+            {step === 1 && (
+              <div className="flex flex-col gap-4">
                 <div>
-                  <p className={`font-bold text-sm ${form.language === l.code ? 'text-green-900' : 'text-gray-800'}`}>{l.label}</p>
-                  <p className="text-xs text-gray-400">{l.native}</p>
+                  <label className="text-xs font-bold text-gray-600 uppercase tracking-wider mb-1.5 block">Nama Lengkap</label>
+                  <input
+                    value={form.name}
+                    onChange={e => setForm({ ...form, name: e.target.value })}
+                    placeholder="Pak Budi"
+                    className="w-full border border-gray-300 rounded-xl px-4 py-3 outline-none focus:border-primary focus:ring-1 focus:ring-primary text-sm text-gray-800"
+                  />
                 </div>
-                {form.language === l.code && <CheckCircle size={18} className="text-green-600" />}
-              </button>
-            ))}
-          </div>
-        )}
+                <div>
+                  <label className="text-xs font-bold text-gray-600 uppercase tracking-wider mb-1.5 block">Nama Usaha</label>
+                  <input
+                    value={form.business}
+                    onChange={e => setForm({ ...form, business: e.target.value })}
+                    placeholder="Batik Slamet Pekalongan"
+                    className="w-full border border-gray-300 rounded-xl px-4 py-3 outline-none focus:border-primary focus:ring-1 focus:ring-primary text-sm text-gray-800"
+                  />
+                </div>
+              </div>
+            )}
 
-        <div className="flex gap-3 mt-8">
-          {step > 1 && (
-            <button onClick={() => setStep(step-1)}
-              className="flex-1 border border-gray-300 text-gray-700 font-semibold py-4 rounded-xl">
-              Kembali
-            </button>
-          )}
-          <button
-            onClick={() => step < 3 ? setStep(step+1) : router.push('/dashboard')}
-            className="flex-1 bg-[#0F4A33] text-white font-bold py-4 rounded-xl">
-            {step === 3 ? 'Mulai Berjualan' : 'Lanjut'}
-          </button>
+            {step === 2 && (
+              <div className="flex flex-col gap-2 max-h-[300px] overflow-y-auto pr-1">
+                <label className="text-xs font-bold text-gray-600 uppercase tracking-wider mb-1 block">Provinsi Anda</label>
+                {provinces.map(p => (
+                  <button
+                    key={p}
+                    type="button"
+                    onClick={() => setForm({ ...form, province: p })}
+                    className={`w-full text-left px-4 py-3 rounded-xl border font-semibold text-xs flex items-center justify-between transition-all
+                      ${form.province === p ? 'border-primary bg-primary/5 text-primary font-bold' : 'border-gray-200 bg-white text-gray-700 hover:bg-gray-50'}`}
+                  >
+                    {p}
+                    {form.province === p && <CheckCircle size={16} className="text-primary" />}
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {step === 3 && (
+              <div className="flex flex-col gap-2 max-h-[300px] overflow-y-auto pr-1">
+                <p className="text-xs text-gray-400 mb-2">AI akan mengirim notifikasi suara dalam bahasa ini</p>
+                {languages.map(l => (
+                  <button
+                    key={l.code}
+                    type="button"
+                    onClick={() => setForm({ ...form, language: l.code })}
+                    className={`w-full text-left px-4 py-3 rounded-xl border flex items-center justify-between transition-all
+                      ${form.language === l.code ? 'border-primary bg-primary/5' : 'border-gray-200 bg-white hover:bg-gray-50'}`}
+                  >
+                    <div>
+                      <p className={`font-bold text-xs ${form.language === l.code ? 'text-primary font-bold' : 'text-gray-800'}`}>{l.label}</p>
+                      <p className="text-[10px] text-gray-400 mt-0.5">{l.native}</p>
+                    </div>
+                    {form.language === l.code && <CheckCircle size={16} className="text-primary" />}
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {/* CTAs */}
+            <div className="flex gap-3 mt-6">
+              {step > 1 && (
+                <button
+                  type="button"
+                  onClick={() => setStep(step - 1)}
+                  className="flex-1 border border-gray-300 text-gray-700 font-bold py-3.5 rounded-xl text-xs hover:bg-gray-50 transition-colors"
+                >
+                  Kembali
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={() => step < 3 ? setStep(step + 1) : handleSubmit()}
+                disabled={loading}
+                className="flex-1 bg-primary hover:opacity-95 text-white font-bold py-3.5 rounded-xl text-xs disabled:opacity-50 transition-all flex items-center justify-center"
+              >
+                {loading ? 'Menyimpan...' : step === 3 ? 'Mulai Berjualan' : 'Lanjut'}
+              </button>
+            </div>
+          </div>
+
         </div>
-      </div>
-    </div>
+      </section>
+    </main>
   );
 }

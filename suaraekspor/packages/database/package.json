@@ -5,6 +5,7 @@
   "scripts": {
     "generate": "prisma generate",
     "push": "prisma db push",
+    "db:push": "dotenv -e ../../apps/api/.env -- prisma db push",
     "migrate": "prisma migrate dev",
     "studio": "prisma studio",
     "seed": "ts-node src/seed.ts"

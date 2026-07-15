@@ -6,6 +6,7 @@ import { Globe } from 'lucide-react';
 import { useMiddleman } from "../context/middleman-context";
 import Sidebar from '../../components/layout/Sidebar';
 import MobileProfileMenu from '../../components/layout/MobileProfileMenu';
+import MobileBottomNav from '../../components/layout/MobileBottomNav';
 
 type Message = {
   id: string;
@@ -104,12 +105,12 @@ export default function WhatsAppPage() {
   const pendingCount = messages.filter(m => m.status === 'pending').length;
 
   return (
-    <div className="flex min-h-screen bg-[#FDF0E8] text-[#1c1b1b] font-body-md overflow-x-hidden">
+    <div className="flex min-h-screen bg-background text-on-background font-body-md overflow-x-hidden">
       {/* DESKTOP SIDEBAR */}
       <Sidebar />
 
       {/* MAIN CONTENT */}
-      <main className="w-full md:w-[calc(100%-14rem)] md:ml-56 min-h-screen bg-[#FDF0E8] flex flex-col relative pb-24 md:pb-10">
+      <main className="w-full md:w-[calc(100%-14rem)] md:ml-56 min-h-screen bg-background flex flex-col relative pb-24 md:pb-10">
         {/* Top Navbar */}
         <header className="bg-white border-b border-gray-200 h-16 flex items-center justify-between px-4 md:px-8 sticky top-0 z-30">
           <div>
@@ -122,7 +123,7 @@ export default function WhatsAppPage() {
               <div className="flex items-center gap-1.5 sm:gap-2">
                 <div className="relative inline-flex items-center cursor-pointer" onClick={() => setIsConnected(!isConnected)}>
                   <input type="checkbox" className="sr-only peer" checked={isConnected} readOnly />
-                  <div className="w-8 h-4 bg-gray-200 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-[#0F4A33]"></div>
+                  <div className="w-8 h-4 bg-gray-200 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-primary"></div>
                 </div>
                 <span className="text-[9px] sm:text-[10px] font-bold text-gray-700 uppercase tracking-wider">{isConnected ? 'Connected' : 'Offline'}</span>
               </div>
@@ -138,6 +139,18 @@ export default function WhatsAppPage() {
 
         <div className="px-4 md:px-8 pt-4 md:pt-8 pb-20 md:pb-12 max-w-[1440px] mx-auto w-full flex-1 space-y-6">
           
+          {/* COMING SOON BANNER */}
+          <div className="bg-secondary-container/10 border border-secondary-container/30 rounded-xl p-4 flex items-start sm:items-center justify-between gap-4">
+            <div className="flex items-start sm:items-center gap-3">
+              <span className="material-symbols-outlined text-secondary-container text-[24px] mt-1 sm:mt-0">construction</span>
+              <div>
+                <p className="font-bold text-secondary-container text-sm md:text-base">Fitur Masih Dalam Pengembangan (Coming Soon)</p>
+                <p className="text-xs md:text-sm text-gray-600">Tampilan ini hanya sebagai demonstrasi. Pesan di bawah ini adalah data dummy.</p>
+              </div>
+            </div>
+            <span className="hidden sm:inline-block bg-secondary-container text-white text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wider shrink-0">Segera Hadir</span>
+          </div>
+
           {/* HEADER ROW */}
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
             <div>
@@ -149,8 +162,8 @@ export default function WhatsAppPage() {
 
           {/* STATS */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="bg-white border border-[#E5D5CB] p-4 rounded-xl flex items-center gap-3 hover:border-[#0F4A33] transition-all shadow-sm">
-              <div className="w-10 h-10 rounded-lg bg-[#c5eadf] flex items-center justify-center text-[#0F4A33]">
+            <div className="bg-white border border-gray-200 p-4 rounded-xl flex items-center gap-3 hover:border-primary transition-all shadow-sm">
+              <div className="w-10 h-10 rounded-lg bg-primary-fixed flex items-center justify-center text-primary">
                 <span className="material-symbols-outlined text-[20px]">pending_actions</span>
               </div>
               <div>
@@ -158,8 +171,8 @@ export default function WhatsAppPage() {
                 <p className="text-gray-500 text-[10px] font-bold uppercase tracking-wider mt-1">Menunggu</p>
               </div>
             </div>
-            <div className="bg-white border border-[#E5D5CB] p-4 rounded-xl flex items-center gap-3 hover:border-[#0F4A33] transition-all shadow-sm">
-              <div className="w-10 h-10 rounded-lg bg-[#ffdbca] flex items-center justify-center text-[#9c4400]">
+            <div className="bg-white border border-gray-200 p-4 rounded-xl flex items-center gap-3 hover:border-primary transition-all shadow-sm">
+              <div className="w-10 h-10 rounded-lg bg-secondary-fixed flex items-center justify-center text-secondary">
                 <span className="material-symbols-outlined text-[20px]" style={{ fontVariationSettings: "'FILL' 1" }}>chat</span>
               </div>
               <div>
@@ -167,8 +180,8 @@ export default function WhatsAppPage() {
                 <p className="text-gray-500 text-[10px] font-bold uppercase tracking-wider mt-1">Pesan WA</p>
               </div>
             </div>
-            <div className="bg-white border border-[#E5D5CB] p-4 rounded-xl flex items-center gap-3 hover:border-[#0F4A33] transition-all shadow-sm">
-              <div className="w-10 h-10 rounded-lg bg-[#b0f2b7] flex items-center justify-center text-[#0F4A33]">
+            <div className="bg-white border border-gray-200 p-4 rounded-xl flex items-center gap-3 hover:border-primary transition-all shadow-sm">
+              <div className="w-10 h-10 rounded-lg bg-tertiary-fixed flex items-center justify-center text-primary">
                 <span className="material-symbols-outlined text-[20px]">verified_user</span>
               </div>
               <div>
@@ -187,7 +200,7 @@ export default function WhatsAppPage() {
                   onClick={() => setActiveFilter(f)}
                   className={`px-4 py-2 rounded-full font-bold text-xs md:text-sm whitespace-nowrap border transition-colors ${
                     activeFilter === f
-                      ? 'bg-[#0F4A33] text-white border-[#0F4A33]'
+                      ? 'bg-primary text-white border-primary'
                       : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'
                   }`}
                 >
@@ -202,16 +215,16 @@ export default function WhatsAppPage() {
               <input 
                 type="text" 
                 placeholder="Cari percakapan..." 
-                className="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-200 rounded-full text-sm focus:outline-none focus:border-[#0F4A33] text-gray-700 placeholder-gray-400"
+                className="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-200 rounded-full text-sm focus:outline-none focus:border-primary text-gray-700 placeholder-gray-400"
               />
             </div>
           </div>
 
           {/* MAIN CONTAINER */}
-          <div className="bg-[#FDF0E8] overflow-hidden flex flex-col">
+          <div className="bg-background overflow-hidden flex flex-col">
 
             {/* INBOX */}
-            <div className="p-4 md:p-6 bg-[#FDF0E8] flex flex-col gap-4">
+            <div className="p-4 md:p-6 bg-background flex flex-col gap-4">
               {filtered.length === 0 && (
                 <div className="text-center py-12 text-gray-400">
                   <span className="material-symbols-outlined text-4xl mb-2 opacity-30">chat_bubble</span>
@@ -226,26 +239,26 @@ export default function WhatsAppPage() {
                   <div className="p-4 md:p-5 border-b border-gray-100">
                     <div className="flex justify-between items-start mb-4">
                       <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-[#c5eadf] rounded-full flex items-center justify-center flex-shrink-0">
-                          <span className="text-[#0F4A33] font-bold text-[16px]">{msg.buyer.charAt(0)}</span>
+                        <div className="w-10 h-10 bg-primary-fixed rounded-full flex items-center justify-center flex-shrink-0">
+                          <span className="text-primary font-bold text-[16px]">{msg.buyer.charAt(0)}</span>
                         </div>
                         <div>
                           <div className="flex flex-wrap items-center gap-2">
                             <h4 className="text-[15px] font-bold text-gray-800 leading-tight">{msg.buyer}</h4>
-                            {msg.status === 'pending' && <span className="px-2 py-0.5 bg-[#e5e2e1] text-[#1c1b1b] rounded-full text-[9px] font-bold uppercase tracking-wider">High Priority</span>}
-                            <span className="px-2 py-0.5 bg-[#b0f2b7] text-[#00280d] rounded-full text-[9px] font-bold uppercase tracking-wider flex items-center gap-1">
+                            {msg.status === 'pending' && <span className="px-2 py-0.5 bg-gray-200 text-on-background rounded-full text-[9px] font-bold uppercase tracking-wider">High Priority</span>}
+                            <span className="px-2 py-0.5 bg-tertiary-fixed text-tertiary rounded-full text-[9px] font-bold uppercase tracking-wider flex items-center gap-1">
                               <span className="material-symbols-outlined text-[10px]">bolt</span> AI Translated
                             </span>
                           </div>
-                          <div className="flex items-center gap-1 text-[#414846] mt-1">
+                          <div className="flex items-center gap-1 text-gray-600 mt-1">
                             <span className="material-symbols-outlined text-[12px]">public</span>
                             <span className="text-[11px] font-medium">{msg.buyerCountry} &bull; {msg.time}</span>
                           </div>
                         </div>
                       </div>
                       <div className="flex flex-col items-end text-right">
-                        <span className="text-[9px] font-bold text-[#414846] uppercase tracking-widest mb-0.5">Conversation ID</span>
-                        <span className="text-[13px] font-bold text-[#01261f]">#{msg.channel.toUpperCase()}-9823{msg.id}</span>
+                        <span className="text-[9px] font-bold text-gray-600 uppercase tracking-widest mb-0.5">Conversation ID</span>
+                        <span className="text-[13px] font-bold text-primary">#{msg.channel.toUpperCase()}-9823{msg.id}</span>
                       </div>
                     </div>
 
@@ -259,13 +272,13 @@ export default function WhatsAppPage() {
                         <p className="text-[10px] font-bold uppercase tracking-wider text-blue-600 mb-2">TERJEMAHAN AI</p>
                         <p className="text-sm text-gray-800">"{msg.translatedText}"</p>
                       </div>
-                      <div className="bg-[#f0faf5] p-4 rounded-lg border-l-4 border-[#0F4A33] flex flex-col">
-                        <p className="text-[10px] font-bold uppercase tracking-wider text-[#0F4A33] mb-2">BALASAN AI (SARAN)</p>
+                      <div className="bg-[#f0faf5] p-4 rounded-lg border-l-4 border-primary flex flex-col">
+                        <p className="text-[10px] font-bold uppercase tracking-wider text-primary mb-2">BALASAN AI (SARAN)</p>
                         {editingId === msg.id ? (
                           <textarea
                             value={editText}
                             onChange={e => setEditText(e.target.value)}
-                            className="w-full text-sm text-gray-800 bg-white border border-[#0F4A33]/30 rounded-lg p-2.5 resize-none focus:outline-none focus:border-[#0F4A33] flex-1 min-h-[80px]"
+                            className="w-full text-sm text-gray-800 bg-white border border-primary/30 rounded-lg p-2.5 resize-none focus:outline-none focus:border-primary flex-1 min-h-[80px]"
                           />
                         ) : (
                           <p className="text-sm text-gray-800">"{msg.aiReply}"</p>
@@ -280,7 +293,7 @@ export default function WhatsAppPage() {
                       <div className="flex gap-4 w-full md:w-auto order-2 md:order-1 justify-center md:justify-start">
                         {editingId !== msg.id && (
                           <>
-                            <button onClick={() => handleEdit(msg)} className="flex items-center gap-1.5 text-gray-500 hover:text-[#0F4A33] font-bold text-[13px] transition-colors">
+                            <button onClick={() => handleEdit(msg)} className="flex items-center gap-1.5 text-gray-500 hover:text-primary font-bold text-[13px] transition-colors">
                               <span className="material-symbols-outlined text-[16px]">edit_note</span> Edit Respon
                             </button>
                             <button onClick={() => handleReject(msg.id)} className="flex items-center gap-1.5 text-red-500 hover:text-red-600 font-bold text-[13px] transition-colors">
@@ -292,11 +305,11 @@ export default function WhatsAppPage() {
                       
                       <div className="w-full md:w-auto order-1 md:order-2">
                         {editingId === msg.id ? (
-                          <button onClick={() => handleSaveEdit(msg.id)} className="w-full md:w-auto bg-[#0F4A33] text-white px-5 py-2 rounded-lg text-sm font-semibold flex items-center justify-center gap-2 active:scale-95 transition-transform">
+                          <button onClick={() => handleSaveEdit(msg.id)} className="w-full md:w-auto bg-primary text-white px-5 py-2 rounded-lg text-sm font-semibold flex items-center justify-center gap-2 active:scale-95 transition-transform">
                             <span className="material-symbols-outlined text-[16px]">send</span> Simpan & Kirim
                           </button>
                         ) : (
-                          <button onClick={() => handleApprove(msg.id)} className="w-full md:w-auto bg-[#0F4A33] text-white px-5 py-2 rounded-lg text-sm font-semibold flex items-center justify-center gap-2 active:scale-95 transition-all shadow-sm">
+                          <button onClick={() => handleApprove(msg.id)} className="w-full md:w-auto bg-primary text-white px-5 py-2 rounded-lg text-sm font-semibold flex items-center justify-center gap-2 active:scale-95 transition-all shadow-sm">
                             <span className="material-symbols-outlined text-[16px]">send</span> Approve & Kirim
                           </button>
                         )}
@@ -317,39 +330,7 @@ export default function WhatsAppPage() {
         </div>
 
         {/* BOTTOM NAV MOBILE */}
-        <nav className="md:hidden fixed bottom-0 left-0 w-full bg-[#01261f] border-t border-[#83a69c]/10 flex z-50 pb-safe shadow-lg">
-          {[
-            { label: 'Produk', href: '/dashboard', icon: 'inventory_2' },
-            { label: 'Upload', href: '/upload', icon: 'upload_file' },
-            { label: 'Pesan', href: '/conversations', icon: 'forum' },
-            { label: 'WhatsApp', href: '/whatsapp', icon: 'chat' },
-            { label: 'Panduan', href: '/panduan', icon: 'menu_book' }
-          ].map((item) => {
-            const isActive = item.href === '/dashboard' 
-              ? (pathname === '/dashboard' || (pathname && pathname.startsWith('/product')))
-              : (pathname === item.href || (pathname && pathname.startsWith(item.href)));
-            return (
-              <Link 
-                key={item.href} 
-                href={item.href} 
-                className={`flex-1 flex flex-col items-center py-2.5 transition-colors relative ${
-                  isActive ? 'text-[#fe802f]' : 'text-[#83a69c] opacity-80 hover:opacity-100'
-                }`}
-              >
-                <span 
-                  className="material-symbols-outlined text-[20px]" 
-                  style={{ fontVariationSettings: isActive ? "'FILL' 1" : "'FILL' 0" }}
-                >
-                  {item.icon}
-                </span>
-                {item.label === 'Pesan' && (
-                  <span className="absolute top-2.5 right-6 w-2 h-2 bg-red-500 rounded-full border border-[#01261f]"></span>
-                )}
-                <span className={`text-[9px] mt-0.5 ${isActive ? 'font-bold' : 'font-medium'}`}>{item.label}</span>
-              </Link>
-            );
-          })}
-        </nav>
+        <MobileBottomNav />
       </main>
     </div>
   );
