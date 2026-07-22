@@ -9,6 +9,11 @@
 FROM node:20-slim AS base
 WORKDIR /app
 
+# node:20-slim ships without OpenSSL, so Prisma can't detect which engine
+# binary to use and silently falls back to a guess (openssl-1.1.x) — install
+# it explicitly so Prisma picks the right engine for this base image.
+RUN apt-get update -y && apt-get install -y openssl ca-certificates && rm -rf /var/lib/apt/lists/*
+
 # Install all workspace dependencies first (better layer caching)
 COPY package.json package-lock.json tsconfig.base.json ./
 COPY apps/api/package.json apps/api/package.json
