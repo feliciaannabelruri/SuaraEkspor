@@ -7,7 +7,6 @@ import Footer from '@/components/layout/Footer';
 import Sidebar from '@/components/layout/Sidebar';
 import MobileBottomNav from '@/components/layout/MobileBottomNav';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
-import CheckCircle from '@/components/ui/CheckCircle';
 import apiClient from '@/lib/api-client';
 import { useTranslation } from '@/hooks/useTranslation';
 import { User, Shield, CheckCircle2, Save, ArrowLeft } from 'lucide-react';
