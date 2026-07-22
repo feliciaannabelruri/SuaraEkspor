@@ -34,6 +34,10 @@ app.use(express.urlencoded({ extended: true }));
 // Static audio files (untuk voice notification)
 app.use('/audio', express.static(env.AUDIO_OUTPUT_DIR));
 
+app.get('/', (_req, res) => {
+  res.json({ success: true, service: 'SuaraEkspor API', health: '/api/v1/health' });
+});
+
 app.use('/api/v1', routes);
 
 // Error handler middleware
