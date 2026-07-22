@@ -23,6 +23,7 @@ type MiddlemanContextType = {
   setActiveUMKM: (u: UMKM | null) => void;
   umkmList: UMKM[];
   handleToggleMiddleman: () => void;
+  activateUMKM: (u: UMKM) => void;
   refreshSellers: () => Promise<void>;
 };
 
@@ -95,6 +96,15 @@ export function MiddlemanProvider({ children }: { children: ReactNode }) {
     }
   }
 
+  /** Aktifkan mode kelola untuk satu UMKM tertentu — dipakai halaman /kelola-umkm */
+  function activateUMKM(umkm: UMKM) {
+    setIsMiddleman(true);
+    setActiveUMKM(umkm);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('se_active_umkm', JSON.stringify(umkm));
+    }
+  }
+
   function handleCloseModal() {
     if (!activeUMKM) {
       setIsMiddleman(false);
@@ -113,6 +123,7 @@ export function MiddlemanProvider({ children }: { children: ReactNode }) {
       setActiveUMKM,
       umkmList,
       handleToggleMiddleman,
+      activateUMKM,
       refreshSellers,
     }}>
       {children}

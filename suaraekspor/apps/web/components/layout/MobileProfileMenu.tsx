@@ -6,7 +6,7 @@ import { createPortal } from 'react-dom';
 import { useMiddleman } from '../../app/context/middleman-context';
 
 export default function MobileProfileMenu() {
-  const { isMiddleman, activeUMKM, handleToggleMiddleman } = useMiddleman();
+  const { isMiddleman, activeUMKM } = useMiddleman();
   const [isOpen, setIsOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
 
@@ -25,8 +25,8 @@ export default function MobileProfileMenu() {
     ? activeUMKM.name.charAt(0).toUpperCase() 
     : 'PB';
   const name = isMiddleman && activeUMKM ? activeUMKM.name : 'Pak Budi';
-  const category = isMiddleman && activeUMKM 
-    ? (activeUMKM.businessName || activeUMKM.province || 'Mode Middleman') 
+  const category = isMiddleman && activeUMKM
+    ? (activeUMKM.businessName || activeUMKM.province || 'Mode Kelola Aktif')
     : 'Batik Pekalongan';
 
   const drawerContent = isOpen && (
@@ -74,11 +74,9 @@ export default function MobileProfileMenu() {
 
         {/* Bottom Actions */}
         <div className="space-y-3 mt-auto pt-6">
-          <button
-            onClick={() => {
-              handleToggleMiddleman();
-              setIsOpen(false);
-            }}
+          <Link
+            href="/kelola-umkm"
+            onClick={() => setIsOpen(false)}
             className={`w-full py-3 px-4 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 shadow-sm cursor-pointer ${
               isMiddleman
                 ? 'bg-[#fe802f] text-white hover:bg-[#e06c20]'
@@ -86,8 +84,8 @@ export default function MobileProfileMenu() {
             }`}
           >
             <span className="material-symbols-outlined text-[18px]">support_agent</span>
-            {isMiddleman ? 'Mode Middleman' : 'Coba Middleman'}
-          </button>
+            {isMiddleman ? 'Mode Kelola Aktif' : 'Kelola UMKM Lain'}
+          </Link>
 
           <Link
             href="/profile"
@@ -106,6 +104,19 @@ export default function MobileProfileMenu() {
             <span className="material-symbols-outlined text-[18px]">home</span>
             Ke Homepage
           </Link>
+
+          <button
+            onClick={() => {
+              localStorage.removeItem('se_token');
+              localStorage.removeItem('se_user');
+              localStorage.removeItem('se_active_umkm');
+              window.location.href = '/';
+            }}
+            className="w-full py-3 px-4 rounded-xl text-xs font-bold bg-red-600 hover:bg-red-700 text-white transition-all flex items-center justify-center gap-2 shadow-sm cursor-pointer"
+          >
+            <span className="material-symbols-outlined text-[18px]">logout</span>
+            Keluar
+          </button>
         </div>
       </div>
     </div>

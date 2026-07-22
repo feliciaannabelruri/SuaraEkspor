@@ -8,6 +8,16 @@ import { env } from './config/env';
 import routes from './routes';
 import fs from 'fs';
 
+// Blip koneksi DB sesaat (mis. Supabase pooler) tidak boleh mematikan seluruh server —
+// tanpa ini, satu request yang gagal konek DB bisa crash seluruh proses Node dan
+// membuat SEMUA halaman gagal, bukan cuma request yang bersangkutan.
+process.on('unhandledRejection', (reason) => {
+  console.error('[Unhandled Rejection]', reason);
+});
+process.on('uncaughtException', (err) => {
+  console.error('[Uncaught Exception]', err);
+});
+
 const app = express();
 
 // Buat direktori audio jika belum ada

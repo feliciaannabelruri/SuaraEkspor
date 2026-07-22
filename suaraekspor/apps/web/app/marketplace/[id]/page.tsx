@@ -17,6 +17,22 @@ interface ProductListing {
   keywords: string[];
 }
 
+const SUPPORTED_LISTING_LANGS = ['id', 'en', 'zh', 'ar', 'ja', 'de'];
+
+/** Baca bahasa yang dipilih user saat login/onboarding, biar halaman produk otomatis
+ * tampil dalam bahasa itu — bukan selalu default ke English. */
+function readPreferredLang(): string {
+  if (typeof window === 'undefined') return 'en';
+  try {
+    const raw = localStorage.getItem('se_user');
+    if (raw) {
+      const lang = JSON.parse(raw)?.localLanguage;
+      if (lang && SUPPORTED_LISTING_LANGS.includes(lang)) return lang;
+    }
+  } catch {}
+  return 'en';
+}
+
 interface ApiProduct {
   id: string;
   status: string;
@@ -40,7 +56,7 @@ export default function BuyerProductPage() {
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
 
-  const [lang, setLang] = useState<string>('en');
+  const [lang, setLang] = useState<string>(readPreferredLang);
   const [activeImage, setActiveImage] = useState<string | null>(null);
   const [sending, setSending] = useState(false);
   const [contactError, setContactError] = useState<string | null>(null);
@@ -63,9 +79,10 @@ export default function BuyerProductPage() {
         setActiveImage(prev => prev || data.photoUrls?.[0] || null);
         
         const codes = (data.listings || []).map(l => l.languageCode.toLowerCase());
-        // Only set default language on initial load
+        // Keep the current selection (buyer's preferred language, or a manual tab click);
+        // only fall back if this product doesn't actually have a listing in that language.
         setLang(prev => {
-          if (prev && prev !== 'en' && codes.includes(prev)) return prev;
+          if (prev && codes.includes(prev)) return prev;
           return codes.includes('en') ? 'en' : (codes[0] || 'en');
         });
       } catch (err) {
@@ -175,6 +192,15 @@ export default function BuyerProductPage() {
   const heroImage = activeImage || gallery[0] || null;
   const sellerName = product.seller?.businessName || product.seller?.name || 'Penjual';
   const sellerProvince = product.seller?.province || '-';
+
+  // Tombol "Chat via WhatsApp" — sisipkan [ref:<productId>] di pesan template supaya webhook
+  // AI WhatsApp platform (nomor bersama, bukan per-penjual) tahu produk/penjual mana yang dituju.
+  const whatsappPlatformNumber = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER;
+  const whatsappChatUrl = whatsappPlatformNumber
+    ? `https://wa.me/${whatsappPlatformNumber}?text=${encodeURIComponent(
+        `Hi! I'm interested in "${title}" from ${sellerName} on SuaraEkspor. [ref:${product.id}]`,
+      )}`
+    : null;
 
   return (
     <div className="min-h-screen bg-background text-on-background" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
@@ -333,6 +359,17 @@ export default function BuyerProductPage() {
                   </>
                 )}
               </button>
+
+              {whatsappChatUrl && (
+                <a
+                  href={whatsappChatUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mt-3 w-full bg-[#25D366] text-white font-bold py-4 rounded-xl text-[16px] transition-all hover:opacity-90 shadow-lg shadow-[#25D366]/20 flex items-center justify-center gap-2"
+                >
+                  <MessageCircle size={18} /> Chat via WhatsApp
+                </a>
+              )}
             </div>
 
             {/* SIMULASI PESANAN & PEMBAYARAN */}

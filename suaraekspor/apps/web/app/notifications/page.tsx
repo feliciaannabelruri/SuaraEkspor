@@ -22,6 +22,7 @@ interface ApiNotification {
 
 interface Notification {
   id: string;
+  type: string;
   buyerName: string;
   product: string;
   summary: string;
@@ -34,8 +35,9 @@ interface Notification {
 function toViewModel(n: ApiNotification): Notification {
   return {
     id: n.id,
+    type: n.type,
     buyerName: n.title,
-    product: n.type === 'new_order' ? 'Pesanan Baru' : 'Pesan Baru',
+    product: n.type === 'new_order' ? 'Pesanan Baru' : n.type === 'whatsapp_message' ? 'Pesan WhatsApp' : 'Pesan Baru',
     summary: n.message,
     time: new Date(n.createdAt).toLocaleString('id-ID', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }),
     read: n.isRead,
@@ -205,6 +207,11 @@ export default function NotificationsPage() {
                   {notif.conversationId && (
                     <button onClick={() => router.push(`/conversations/${notif.conversationId}`)} className={`px-4 py-2 rounded-lg font-bold transition-all flex items-center justify-center gap-1.5 text-sm ${!notif.read ? 'bg-primary text-white hover:brightness-110' : 'bg-transparent border border-[#717976] text-gray-600 hover:bg-gray-100'}`}>
                       Lihat {notif.read ? 'Riwayat' : 'Percakapan'}
+                    </button>
+                  )}
+                  {!notif.conversationId && notif.type === 'whatsapp_message' && (
+                    <button onClick={() => router.push('/whatsapp')} className={`px-4 py-2 rounded-lg font-bold transition-all flex items-center justify-center gap-1.5 text-sm ${!notif.read ? 'bg-primary text-white hover:brightness-110' : 'bg-transparent border border-[#717976] text-gray-600 hover:bg-gray-100'}`}>
+                      Lihat di WhatsApp
                     </button>
                   )}
                   {!notif.read && (

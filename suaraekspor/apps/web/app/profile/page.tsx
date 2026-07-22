@@ -11,7 +11,6 @@ import CheckCircle from '@/components/ui/CheckCircle';
 import apiClient from '@/lib/api-client';
 import { useTranslation } from '@/hooks/useTranslation';
 import { User, Shield, CheckCircle2, Save, ArrowLeft } from 'lucide-react';
-import { useMiddleman } from '../context/middleman-context';
 
 /** Read a single field from the se_user localStorage entry synchronously */
 function readUserField(field: string): string {
@@ -26,54 +25,24 @@ function readUserField(field: string): string {
 export default function ProfilePage() {
   const router = useRouter();
 
-  // Initialise role and form fields synchronously from localStorage so the correct
-  // layout (Sidebar for sellers, Navbar for buyers) is painted on the first render
-  // with no spinner flash at all. The API call below will refresh these values.
-  const [role, setRole] = useState<'seller' | 'buyer' | 'admin' | null>(
-    () => (readUserField('role') as 'seller' | 'buyer' | 'admin') || null
-  );
+  // NOTE: role/name/etc must start as SSR-safe neutral defaults (no localStorage read
+  // during the initial render) — reading localStorage synchronously in a useState
+  // initializer causes a hydration mismatch, since the server has no `window` but the
+  // client's first (hydrating) render already does. Real values are hydrated from
+  // localStorage inside the effect below instead, which only ever runs client-side.
+  const [role, setRole] = useState<'seller' | 'buyer' | 'admin' | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [error, setError] = useState('');
 
-  // Form Fields — pre-filled from localStorage so they appear instantly
-  const [phone, setPhone] = useState(() => readUserField('phone'));
-  const [name, setName] = useState(() => readUserField('name'));
-  const [businessName, setBusinessName] = useState(() => readUserField('businessName'));
-  const [province, setProvince] = useState(() => readUserField('province'));
-  const [localLanguage, setLocalLanguage] = useState(() => readUserField('localLanguage') || 'id');
-  const [address, setAddress] = useState(() => readUserField('address'));
+  const [phone, setPhone] = useState('');
+  const [name, setName] = useState('');
+  const [businessName, setBusinessName] = useState('');
+  const [province, setProvince] = useState('');
+  const [localLanguage, setLocalLanguage] = useState('id');
+  const [address, setAddress] = useState('');
   const { t } = useTranslation();
-
-  // Middleman Feature States
-  const [pendingRequests, setPendingRequests] = useState<any[]>([]);
-  const [managedSellers, setManagedSellers] = useState<any[]>([]);
-  const [activeManagers, setActiveManagers] = useState<any[]>([]);
-  const [targetPhone, setTargetPhone] = useState('');
-  const [requestError, setRequestError] = useState('');
-  const [requestSuccess, setRequestSuccess] = useState('');
-  const [sendingRequest, setSendingRequest] = useState(false);
-  const { refreshSellers } = useMiddleman();
-
-  async function fetchMiddlemanData() {
-    try {
-      const resSellers = await apiClient.get('/middleman/my-sellers');
-      if (resSellers.data?.success) {
-        setManagedSellers(resSellers.data.data);
-      }
-      const resReqs = await apiClient.get('/middleman/pending-requests');
-      if (resReqs.data?.success) {
-        setPendingRequests(resReqs.data.data);
-      }
-      const resManagers = await apiClient.get('/middleman/my-managers');
-      if (resManagers.data?.success) {
-        setActiveManagers(resManagers.data.data);
-      }
-    } catch (err) {
-      console.error('Failed to load middleman data:', err);
-    }
-  }
 
   useEffect(() => {
     const token = typeof window !== 'undefined' ? localStorage.getItem('se_token') : null;
@@ -81,6 +50,17 @@ export default function ProfilePage() {
       router.replace('/login');
       return;
     }
+
+    // Fast paint from cached localStorage data (client-only, so no hydration mismatch)
+    // while the fresh /users/me request below is in flight.
+    const cachedRole = readUserField('role') as 'seller' | 'buyer' | 'admin' | '';
+    if (cachedRole) setRole(cachedRole);
+    setPhone(readUserField('phone'));
+    setName(readUserField('name'));
+    setBusinessName(readUserField('businessName'));
+    setProvince(readUserField('province'));
+    setLocalLanguage(readUserField('localLanguage') || 'id');
+    setAddress(readUserField('address'));
 
     async function loadProfile() {
       try {
@@ -94,19 +74,6 @@ export default function ProfilePage() {
           setProvince(user.province || '');
           setLocalLanguage(user.localLanguage || 'id');
           setAddress(user.address || '');
-
-          if (user.role === 'seller') {
-            // Load middleman relationships in background
-            apiClient.get('/middleman/my-sellers')
-              .then(r => r.data?.success && setManagedSellers(r.data.data))
-              .catch(() => {});
-            apiClient.get('/middleman/pending-requests')
-              .then(r => r.data?.success && setPendingRequests(r.data.data))
-              .catch(() => {});
-            apiClient.get('/middleman/my-managers')
-              .then(r => r.data?.success && setActiveManagers(r.data.data))
-              .catch(() => {});
-          }
         }
       } catch (err) {
         setError('Gagal memuat profil Anda.');
@@ -116,62 +83,6 @@ export default function ProfilePage() {
     }
     loadProfile();
   }, [router]);
-
-  const handleSendRequest = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!targetPhone) return;
-    setSendingRequest(true);
-    setRequestError('');
-    setRequestSuccess('');
-    try {
-      const res = await apiClient.post('/middleman/request', { phone: targetPhone });
-      if (res.data?.success) {
-        setRequestSuccess('Permintaan berhasil dikirim! Silakan minta penjual menyetujuinya di akun mereka.');
-        setTargetPhone('');
-        fetchMiddlemanData();
-      }
-    } catch (err: any) {
-      setRequestError(err.response?.data?.error || 'Gagal mengirimkan permintaan');
-    } finally {
-      setSendingRequest(false);
-    }
-  };
-
-  const handleApproveRequest = async (relationId: string) => {
-    try {
-      const res = await apiClient.patch(`/middleman/request/${relationId}/approve`);
-      if (res.data?.success) {
-        fetchMiddlemanData();
-        refreshSellers();
-      }
-    } catch (err) {
-      console.error('Failed to approve request:', err);
-    }
-  };
-
-  const handleRejectRequest = async (relationId: string) => {
-    try {
-      const res = await apiClient.patch(`/middleman/request/${relationId}/reject`);
-      if (res.data?.success) {
-        fetchMiddlemanData();
-      }
-    } catch (err) {
-      console.error('Failed to reject request:', err);
-    }
-  };
-
-  const handleDisconnectRelation = async (relationId: string) => {
-    if (!confirm('Apakah Anda yakin ingin memutuskan hubungan pengelolaan ini?')) return;
-    try {
-      const res = await apiClient.delete(`/middleman/relation/${relationId}`);
-      if (res.data?.success) {
-        fetchMiddlemanData();
-        refreshSellers();
-      }
-    } catch (err) {
-      console.error('Failed to disconnect:', err);
-    }
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -381,153 +292,16 @@ export default function ProfilePage() {
             </form>
           )}
 
-          {/* Middleman Management Section */}
+          {/* Kelola UMKM Lain — dipindah ke halaman tersendiri */}
           {role === 'seller' && (
-            <div className="mt-12 space-y-8 pb-12">
-              <hr className="border-gray-200" />
-              
-              {/* Section A: Send Connection Request */}
-              <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 md:p-8 space-y-6 text-left">
-                <div>
-                  <h3 className="text-lg font-bold text-primary flex items-center gap-2">
-                    <span className="material-symbols-outlined text-secondary-container">construction</span>
-                    Kelola Akun UMKM Lain (Middleman)
-                  </h3>
-                  <p className="text-xs text-gray-500 mt-1">
-                    Kirim permintaan pengelolaan akun seller/UMKM lain dengan memasukkan nomor HP mereka.
-                  </p>
-                </div>
-
-                <form onSubmit={handleSendRequest} className="flex flex-col sm:flex-row gap-3">
-                  <div className="flex-1">
-                    <input
-                      type="tel"
-                      required
-                      value={targetPhone}
-                      onChange={(e) => setTargetPhone(e.target.value)}
-                      placeholder="Contoh: +628123456789"
-                      className="w-full px-4 py-3.5 rounded-xl bg-[#F5E6DD]/30 border-transparent focus:border-primary focus:bg-white focus:ring-0 transition-all font-medium text-sm outline-none border text-gray-800"
-                    />
-                  </div>
-                  <button
-                    type="submit"
-                    disabled={sendingRequest}
-                    className="bg-secondary-container text-white font-bold px-6 py-3.5 rounded-xl text-xs hover:opacity-90 active:scale-95 transition-all flex items-center justify-center gap-2 shadow-sm disabled:opacity-50"
-                  >
-                    {sendingRequest ? 'Mengirim...' : 'Kirim Permintaan'}
-                  </button>
-                </form>
-
-                {requestError && <p className="text-xs font-semibold text-red-500">{requestError}</p>}
-                {requestSuccess && <p className="text-xs font-semibold text-green-600">{requestSuccess}</p>}
-
-                {/* List of Connected Sellers */}
-                <div className="space-y-3 pt-2">
-                  <h4 className="text-xs font-bold text-gray-600 uppercase tracking-wider">UMKM yang Anda Kelola</h4>
-                  {managedSellers.length === 0 ? (
-                    <p className="text-xs text-gray-400 italic">Belum ada UMKM yang terhubung.</p>
-                  ) : (
-                    <div className="divide-y divide-gray-100">
-                      {managedSellers.map((seller: any) => (
-                        <div key={seller.id} className="py-3 flex justify-between items-center gap-4">
-                          <div>
-                            <p className="font-bold text-gray-800 text-sm">{seller.businessName || seller.name}</p>
-                            <p className="text-xs text-gray-500">{seller.name} · {seller.province || 'Lainnya'} · {seller.phone}</p>
-                          </div>
-                          <button
-                            onClick={() => handleDisconnectRelation(seller.relationId)}
-                            className="text-red-500 hover:text-red-700 hover:bg-red-50 p-2 rounded-xl transition-all border border-transparent hover:border-red-100 text-xs font-bold"
-                          >
-                            Putus Hubungan
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Section B: Incoming Requests */}
-              <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 md:p-8 space-y-6 text-left">
-                <div>
-                  <h3 className="text-lg font-bold text-primary flex items-center gap-2">
-                    <span className="material-symbols-outlined text-primary">group</span>
-                    Permintaan Pengelolaan Akun (Request Masuk)
-                  </h3>
-                  <p className="text-xs text-gray-500 mt-1">
-                    Daftar akun middleman yang meminta izin untuk mengelola akun UMKM Anda.
-                  </p>
-                </div>
-
-                {pendingRequests.length === 0 ? (
-                  <p className="text-xs text-gray-400 italic">Tidak ada permintaan masuk saat ini.</p>
-                ) : (
-                  <div className="divide-y divide-gray-100">
-                    {pendingRequests.map((req: any) => (
-                      <div key={req.relationId} className="py-4 flex flex-col sm:flex-row justify-between sm:items-center gap-4">
-                        <div>
-                          <p className="font-bold text-gray-800 text-sm">
-                            {req.middleman.businessName || req.middleman.name || 'Middleman'}
-                          </p>
-                          <p className="text-xs text-gray-500">Nama: {req.middleman.name} · HP: {req.middleman.phone}</p>
-                        </div>
-                        <div className="flex gap-2">
-                          <button
-                            onClick={() => handleApproveRequest(req.relationId)}
-                            className="bg-primary text-white font-bold px-4 py-2 rounded-xl text-xs hover:opacity-90 active:scale-95 transition-all"
-                          >
-                            Setujui
-                          </button>
-                          <button
-                            onClick={() => handleRejectRequest(req.relationId)}
-                            className="bg-gray-100 text-gray-700 font-bold px-4 py-2 rounded-xl text-xs hover:bg-gray-200 active:scale-95 transition-all border border-gray-200"
-                          >
-                            Tolak
-                          </button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              {/* Section C: Active Managers (Middleman yang Memiliki Akses ke Akun Anda) */}
-              <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 md:p-8 space-y-6 text-left">
-                <div>
-                  <h3 className="text-lg font-bold text-primary flex items-center gap-2">
-                    <span className="material-symbols-outlined text-secondary-container">vpn_key</span>
-                    Middleman yang Memiliki Akses (Akun Pengelola)
-                  </h3>
-                  <p className="text-xs text-gray-500 mt-1">
-                    Daftar akun middleman yang saat ini disetujui memiliki akses penuh untuk mengelola dan memposting produk atas nama akun Anda.
-                  </p>
-                </div>
-
-                {activeManagers.length === 0 ? (
-                  <p className="text-xs text-gray-400 italic">Tidak ada akun middleman yang memiliki akses ke akun Anda saat ini.</p>
-                ) : (
-                  <div className="divide-y divide-gray-100">
-                    {activeManagers.map((mgr: any) => (
-                      <div key={mgr.relationId} className="py-4 flex flex-col sm:flex-row justify-between sm:items-center gap-4">
-                        <div>
-                          <p className="font-bold text-gray-800 text-sm">
-                            {mgr.businessName || mgr.name || 'Middleman'}
-                          </p>
-                          <p className="text-xs text-gray-500">Nama: {mgr.name} · HP: {mgr.phone} · Wilayah: {mgr.province || 'Indonesia'}</p>
-                        </div>
-                        <div>
-                          <button
-                            onClick={() => handleDisconnectRelation(mgr.relationId)}
-                            className="bg-red-50 text-red-500 border border-red-200 font-bold px-4 py-2 rounded-xl text-xs hover:bg-red-500 hover:text-white active:scale-95 transition-all shadow-sm"
-                          >
-                            Cabut Izin Akses
-                          </button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
+            <div className="mt-8 pb-12 text-center">
+              <Link
+                href="/kelola-umkm"
+                className="inline-flex items-center gap-2 text-sm font-bold text-primary hover:underline"
+              >
+                <span className="material-symbols-outlined text-[18px]">support_agent</span>
+                Kelola UMKM Lain / Lihat Pengelola Akun Anda
+              </Link>
             </div>
           )}
 

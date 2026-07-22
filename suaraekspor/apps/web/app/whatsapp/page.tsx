@@ -1,107 +1,169 @@
 'use client';
-import { useState } from 'react';
-import Link from 'next/link';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { usePathname } from 'next/navigation';
-import { Globe } from 'lucide-react';
 import { useMiddleman } from "../context/middleman-context";
 import Sidebar from '../../components/layout/Sidebar';
 import MobileProfileMenu from '../../components/layout/MobileProfileMenu';
 import MobileBottomNav from '../../components/layout/MobileBottomNav';
+import apiClient from '@/lib/api-client';
+import { useVoiceRecorder } from '@/hooks/useVoiceRecorder';
 
-type Message = {
+type WaMessage = {
   id: string;
-  channel: 'wa' | 'inapp';
-  buyer: string;
-  buyerCountry: string;
+  buyerPhone: string;
+  buyerName: string | null;
   originalText: string;
-  translatedText: string;
-  aiReply: string;
-  time: string;
+  translatedText: string | null;
+  aiReply: string | null;
+  sellerReplyText: string | null;
+  sellerReplyLang: string | null;
   status: 'pending' | 'approved' | 'rejected';
+  createdAt: string;
+  product?: { listings?: { title: string }[] } | null;
 };
 
-const dummyMessages: Message[] = [
-  {
-    id: '1',
-    channel: 'wa',
-    buyer: 'Ahmad Faruq',
-    buyerCountry: 'Malaysia',
-    originalText: 'Hi, I am interested in your batik product. Can you tell me more about the price and shipping to Malaysia?',
-    translatedText: 'Halo, saya tertarik dengan produk batik Anda. Bisakah Anda ceritakan lebih lanjut tentang harga dan pengiriman ke Malaysia?',
-    aiReply: 'Hi Ahmad! Thank you for your interest. Our batik starts from $45/piece. We ship to Malaysia via JNE International, estimated 5-7 days. Would you like to order?',
-    time: '10:32',
-    status: 'pending',
-  },
-  {
-    id: '2',
-    channel: 'wa',
-    buyer: 'Sophie Laurent',
-    buyerCountry: 'Prancis',
-    originalText: 'Bonjour! Est-ce que vous livrez en France? Quel est le délai de livraison?',
-    translatedText: 'Halo! Apakah Anda mengirim ke Prancis? Berapa lama estimasi pengirimannya?',
-    aiReply: 'Bonjour Sophie! Yes, we ship to France. Delivery takes 10-14 business days via EMS. Shipping cost starts from $15. Would you like to proceed?',
-    time: '09:15',
-    status: 'pending',
-  },
-  {
-    id: '3',
-    channel: 'inapp',
-    buyer: 'Lim Wei',
-    buyerCountry: 'Singapura',
-    originalText: 'Do you have this in blue color? I want to buy 3 pieces.',
-    translatedText: 'Apakah ada warna biru? Saya ingin beli 3 buah.',
-    aiReply: 'Hi Lim Wei! Yes, we have blue color available. For 3 pieces, you get 10% discount. Total would be $121.50 including shipping. Shall I confirm your order?',
-    time: '08:50',
-    status: 'approved',
-  },
-  {
-    id: '4',
-    channel: 'wa',
-    buyer: 'James Okonkwo',
-    buyerCountry: 'Nigeria',
-    originalText: 'Hello, what is the minimum order quantity? And do you accept PayPal?',
-    translatedText: 'Halo, berapa minimum pemesanan? Dan apakah menerima PayPal?',
-    aiReply: 'Hello James! Minimum order is 1 piece. We accept PayPal, bank transfer, and Western Union. Let me know if you have more questions!',
-    time: 'Kemarin',
-    status: 'rejected',
-  },
-];
+type WaStatus = {
+  configured: boolean;
+  platformNumber?: string;
+};
 
 export default function WhatsAppPage() {
-  const pathname = usePathname();
-  const { isMiddleman, activeUMKM, handleToggleMiddleman } = useMiddleman();
-  const [isConnected, setIsConnected] = useState(true);
-  const [messages, setMessages] = useState(dummyMessages);
+  usePathname();
+  useMiddleman();
+
+  const [status, setStatus] = useState<WaStatus>({ configured: false });
+  const [messages, setMessages] = useState<WaMessage[]>([]);
+  const [loading, setLoading] = useState(true);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editText, setEditText] = useState('');
-  const [activeFilter, setActiveFilter] = useState<'all' | 'wa' | 'inapp' | 'pending'>('all');
+  const [activeFilter, setActiveFilter] = useState<'all' | 'pending' | 'approved' | 'rejected'>('all');
+  const [busyId, setBusyId] = useState<string | null>(null);
 
-  function handleApprove(id: string) {
-    setMessages(prev => prev.map(m => m.id === id ? { ...m, status: 'approved' } : m));
-    setEditingId(null);
+  // Balas dengan kata-kata sendiri (bahasa daerah/Indonesia) — AI menerjemahkan sebelum dikirim
+  const [ownReplyId, setOwnReplyId] = useState<string | null>(null);
+  const [ownReplyText, setOwnReplyText] = useState('');
+  const [recordingId, setRecordingId] = useState<string | null>(null);
+  const { isRecording, audioBlob, duration, startRecording, stopRecording, resetRecording } = useVoiceRecorder();
+  const pendingVoiceIdRef = useRef<string | null>(null);
+
+  const fetchStatus = useCallback(async () => {
+    try {
+      const res = await apiClient.get('/whatsapp/status');
+      if (res.data.success) setStatus(res.data.data);
+    } catch (err) {
+      console.error('Gagal mengambil status WhatsApp:', err);
+    }
+  }, []);
+
+  const fetchMessages = useCallback(async () => {
+    try {
+      const res = await apiClient.get('/whatsapp/messages');
+      if (res.data.success) setMessages(res.data.data);
+    } catch (err) {
+      console.error('Gagal mengambil pesan WhatsApp:', err);
+    }
+  }, []);
+
+  useEffect(() => {
+    (async () => {
+      setLoading(true);
+      await Promise.all([fetchStatus(), fetchMessages()]);
+      setLoading(false);
+    })();
+  }, [fetchStatus, fetchMessages]);
+
+  async function handleApprove(id: string, overrideText?: string) {
+    setBusyId(id);
+    try {
+      const res = await apiClient.post(`/whatsapp/messages/${id}/approve`, overrideText ? { text: overrideText } : {});
+      if (res.data.success) {
+        setMessages(prev => prev.map(m => m.id === id ? res.data.data : m));
+        setEditingId(null);
+      }
+    } catch (err) {
+      console.error('Gagal mengirim balasan WhatsApp:', err);
+    } finally {
+      setBusyId(null);
+    }
   }
 
-  function handleReject(id: string) {
-    setMessages(prev => prev.map(m => m.id === id ? { ...m, status: 'rejected' } : m));
+  async function handleReject(id: string) {
+    setBusyId(id);
+    try {
+      await apiClient.post(`/whatsapp/messages/${id}/reject`);
+      setMessages(prev => prev.map(m => m.id === id ? { ...m, status: 'rejected' } : m));
+    } catch (err) {
+      console.error('Gagal menolak pesan WhatsApp:', err);
+    } finally {
+      setBusyId(null);
+    }
   }
 
-  function handleEdit(msg: Message) {
+  function handleEdit(msg: WaMessage) {
     setEditingId(msg.id);
-    setEditText(msg.aiReply);
+    setEditText(msg.aiReply ?? '');
   }
 
-  function handleSaveEdit(id: string) {
-    setMessages(prev => prev.map(m => m.id === id ? { ...m, aiReply: editText, status: 'approved' } : m));
-    setEditingId(null);
+  function openOwnReply(msg: WaMessage) {
+    setOwnReplyId(msg.id);
+    setOwnReplyText('');
   }
 
-  const filtered = messages.filter(m => {
-    if (activeFilter === 'wa') return m.channel === 'wa';
-    if (activeFilter === 'inapp') return m.channel === 'inapp';
-    if (activeFilter === 'pending') return m.status === 'pending';
-    return true;
-  });
+  async function handleSendOwnReply(id: string) {
+    if (!ownReplyText.trim()) return;
+    setBusyId(id);
+    try {
+      const res = await apiClient.post(`/whatsapp/messages/${id}/reply`, { text: ownReplyText.trim() });
+      if (res.data.success) {
+        setMessages(prev => prev.map(m => m.id === id ? res.data.data : m));
+        setOwnReplyId(null);
+        setOwnReplyText('');
+      }
+    } catch (err) {
+      console.error('Gagal mengirim balasan sendiri:', err);
+    } finally {
+      setBusyId(null);
+    }
+  }
 
+  async function handleStartVoiceReply(id: string) {
+    setRecordingId(id);
+    pendingVoiceIdRef.current = id;
+    try {
+      await startRecording();
+    } catch {
+      setRecordingId(null);
+      pendingVoiceIdRef.current = null;
+    }
+  }
+
+  useEffect(() => {
+    if (!audioBlob || !pendingVoiceIdRef.current) return;
+    const id = pendingVoiceIdRef.current;
+    pendingVoiceIdRef.current = null;
+    setRecordingId(null);
+    (async () => {
+      setBusyId(id);
+      try {
+        const formData = new FormData();
+        formData.append('audio', audioBlob, 'reply.webm');
+        const res = await apiClient.post(`/whatsapp/messages/${id}/reply-voice`, formData, {
+          headers: { 'Content-Type': 'multipart/form-data' },
+        });
+        if (res.data.success) {
+          setMessages(prev => prev.map(m => m.id === id ? res.data.data : m));
+        }
+      } catch (err) {
+        console.error('Gagal mengirim balasan suara:', err);
+      } finally {
+        setBusyId(null);
+        resetRecording();
+      }
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [audioBlob]);
+
+  const filtered = messages.filter(m => activeFilter === 'all' ? true : m.status === activeFilter);
   const pendingCount = messages.filter(m => m.status === 'pending').length;
 
   return (
@@ -115,40 +177,37 @@ export default function WhatsAppPage() {
         <header className="bg-white border-b border-gray-200 h-16 flex items-center justify-between px-4 md:px-8 sticky top-0 z-30">
           <div>
             <h1 className="text-sm font-bold text-gray-800">WhatsApp</h1>
-            <p className="text-xs text-gray-500">Sinkronisasi</p>
+            <p className="text-xs text-gray-500">AI Middleman SuaraEkspor</p>
           </div>
           <div className="flex items-center gap-4">
-            {/* STATUS KONEKSI WA */}
-            <div className="bg-white border border-gray-200 rounded-md py-1.5 px-2.5 sm:px-3 flex items-center gap-2 sm:gap-4 shadow-sm">
-              <div className="flex items-center gap-1.5 sm:gap-2">
-                <div className="relative inline-flex items-center cursor-pointer" onClick={() => setIsConnected(!isConnected)}>
-                  <input type="checkbox" className="sr-only peer" checked={isConnected} readOnly />
-                  <div className="w-8 h-4 bg-gray-200 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-primary"></div>
-                </div>
-                <span className="text-[9px] sm:text-[10px] font-bold text-gray-700 uppercase tracking-wider">{isConnected ? 'Connected' : 'Offline'}</span>
-              </div>
-              <div className="hidden sm:block h-4 w-px bg-gray-200"></div>
-              <div className="hidden sm:flex items-center gap-1.5">
-                <span className={`w-1.5 h-1.5 rounded-full ${isConnected ? 'bg-green-500 animate-pulse' : 'bg-red-400'}`}></span>
-                <span className="text-[10px] text-gray-500 font-medium">Terakhir: 2 mnt lalu</span>
-              </div>
+            {/* STATUS AI WHATSAPP PLATFORM */}
+            <div className="bg-white border border-gray-200 rounded-md py-1.5 px-2.5 sm:px-3 flex items-center gap-2 shadow-sm">
+              <span className={`w-1.5 h-1.5 rounded-full ${status.configured ? 'bg-green-500 animate-pulse' : 'bg-red-400'}`}></span>
+              <span className="text-[9px] sm:text-[10px] font-bold text-gray-700 uppercase tracking-wider">
+                {status.configured ? 'AI WhatsApp Aktif' : 'Belum Dikonfigurasi'}
+              </span>
             </div>
             <MobileProfileMenu />
           </div>
         </header>
 
         <div className="px-4 md:px-8 pt-4 md:pt-8 pb-20 md:pb-12 max-w-[1440px] mx-auto w-full flex-1 space-y-6">
-          
-          {/* COMING SOON BANNER */}
-          <div className="bg-secondary-container/10 border border-secondary-container/30 rounded-xl p-4 flex items-start sm:items-center justify-between gap-4">
-            <div className="flex items-start sm:items-center gap-3">
-              <span className="material-symbols-outlined text-secondary-container text-[24px] mt-1 sm:mt-0">construction</span>
-              <div>
-                <p className="font-bold text-secondary-container text-sm md:text-base">Fitur Masih Dalam Pengembangan (Coming Soon)</p>
-                <p className="text-xs md:text-sm text-gray-600">Tampilan ini hanya sebagai demonstrasi. Pesan di bawah ini adalah data dummy.</p>
-              </div>
+
+          {/* INFO BANNER — tidak ada aksi connect, ini otomatis */}
+          <div className="bg-[#f0faf5] border border-primary/30 rounded-xl p-4 flex items-start gap-3">
+            <span className="material-symbols-outlined text-primary text-[24px]">smart_toy</span>
+            <div className="flex-1 min-w-0">
+              <p className="font-bold text-primary text-sm">AI WhatsApp Middleman SuaraEkspor</p>
+              <p className="text-xs text-gray-600 mt-1">
+                Buyer chat lewat tombol <b>&ldquo;Chat via WhatsApp&rdquo;</b> di halaman produk Anda — otomatis masuk ke sini,
+                sudah diterjemahkan AI. Anda tidak perlu setup atau menghubungkan nomor WhatsApp apa pun.
+              </p>
+              {!status.configured && (
+                <p className="text-xs text-red-500 mt-2">
+                  Fitur ini belum aktif dari sisi platform — hubungi admin SuaraEkspor.
+                </p>
+              )}
             </div>
-            <span className="hidden sm:inline-block bg-secondary-container text-white text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wider shrink-0">Segera Hadir</span>
           </div>
 
           {/* HEADER ROW */}
@@ -176,7 +235,7 @@ export default function WhatsAppPage() {
                 <span className="material-symbols-outlined text-[20px]" style={{ fontVariationSettings: "'FILL' 1" }}>chat</span>
               </div>
               <div>
-                <p className="text-2xl font-bold leading-none text-gray-800">{messages.filter(m => m.channel === 'wa').length}</p>
+                <p className="text-2xl font-bold leading-none text-gray-800">{messages.length}</p>
                 <p className="text-gray-500 text-[10px] font-bold uppercase tracking-wider mt-1">Pesan WA</p>
               </div>
             </div>
@@ -194,7 +253,7 @@ export default function WhatsAppPage() {
           {/* FILTER TABS */}
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4 mt-2">
             <div className="flex gap-2 overflow-x-auto pb-2 md:pb-0 scrollbar-hide flex-1">
-              {(['all', 'pending', 'wa', 'inapp'] as const).map(f => (
+              {(['all', 'pending', 'approved', 'rejected'] as const).map(f => (
                 <button
                   key={f}
                   onClick={() => setActiveFilter(f)}
@@ -204,47 +263,41 @@ export default function WhatsAppPage() {
                       : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'
                   }`}
                 >
-                  {f === 'all' ? 'Semua' : f === 'pending' ? 'Pending' : f === 'wa' ? 'WhatsApp' : 'In-App'}
+                  {f === 'all' ? 'Semua' : f === 'pending' ? 'Pending' : f === 'approved' ? 'Disetujui' : 'Ditolak'}
                 </button>
               ))}
-            </div>
-            
-            {/* Search Bar */}
-            <div className="relative w-full md:w-64 flex-shrink-0">
-              <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-[20px]">search</span>
-              <input 
-                type="text" 
-                placeholder="Cari percakapan..." 
-                className="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-200 rounded-full text-sm focus:outline-none focus:border-primary text-gray-700 placeholder-gray-400"
-              />
             </div>
           </div>
 
           {/* MAIN CONTAINER */}
           <div className="bg-background overflow-hidden flex flex-col">
-
-            {/* INBOX */}
             <div className="p-4 md:p-6 bg-background flex flex-col gap-4">
-              {filtered.length === 0 && (
+              {loading && (
+                <div className="text-center py-12 text-gray-400">
+                  <p className="text-sm font-bold">Memuat...</p>
+                </div>
+              )}
+
+              {!loading && filtered.length === 0 && (
                 <div className="text-center py-12 text-gray-400">
                   <span className="material-symbols-outlined text-4xl mb-2 opacity-30">chat_bubble</span>
-                  <p className="text-sm font-bold">Tidak ada pesan</p>
+                  <p className="text-sm font-bold">Belum ada pesan masuk</p>
                 </div>
               )}
 
               {filtered.map((msg) => (
                 <div key={msg.id} className={`bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 ${msg.status === 'rejected' ? 'opacity-60' : ''}`}>
-                  
+
                   {/* Header */}
                   <div className="p-4 md:p-5 border-b border-gray-100">
                     <div className="flex justify-between items-start mb-4">
                       <div className="flex items-center gap-3">
                         <div className="w-10 h-10 bg-primary-fixed rounded-full flex items-center justify-center flex-shrink-0">
-                          <span className="text-primary font-bold text-[16px]">{msg.buyer.charAt(0)}</span>
+                          <span className="text-primary font-bold text-[16px]">{(msg.buyerName || msg.buyerPhone).charAt(0)}</span>
                         </div>
                         <div>
                           <div className="flex flex-wrap items-center gap-2">
-                            <h4 className="text-[15px] font-bold text-gray-800 leading-tight">{msg.buyer}</h4>
+                            <h4 className="text-[15px] font-bold text-gray-800 leading-tight">{msg.buyerName || msg.buyerPhone}</h4>
                             {msg.status === 'pending' && <span className="px-2 py-0.5 bg-gray-200 text-on-background rounded-full text-[9px] font-bold uppercase tracking-wider">High Priority</span>}
                             <span className="px-2 py-0.5 bg-tertiary-fixed text-tertiary rounded-full text-[9px] font-bold uppercase tracking-wider flex items-center gap-1">
                               <span className="material-symbols-outlined text-[10px]">bolt</span> AI Translated
@@ -252,13 +305,15 @@ export default function WhatsAppPage() {
                           </div>
                           <div className="flex items-center gap-1 text-gray-600 mt-1">
                             <span className="material-symbols-outlined text-[12px]">public</span>
-                            <span className="text-[11px] font-medium">{msg.buyerCountry} &bull; {msg.time}</span>
+                            <span className="text-[11px] font-medium">{msg.buyerPhone} &bull; {new Date(msg.createdAt).toLocaleString('id-ID')}</span>
                           </div>
+                          {msg.product?.listings?.[0]?.title && (
+                            <div className="flex items-center gap-1 text-primary mt-0.5">
+                              <span className="material-symbols-outlined text-[12px]">inventory_2</span>
+                              <span className="text-[11px] font-semibold">{msg.product.listings[0].title}</span>
+                            </div>
+                          )}
                         </div>
-                      </div>
-                      <div className="flex flex-col items-end text-right">
-                        <span className="text-[9px] font-bold text-gray-600 uppercase tracking-widest mb-0.5">Conversation ID</span>
-                        <span className="text-[13px] font-bold text-primary">#{msg.channel.toUpperCase()}-9823{msg.id}</span>
                       </div>
                     </div>
 
@@ -285,6 +340,70 @@ export default function WhatsAppPage() {
                         )}
                       </div>
                     </div>
+
+                    {/* Balas dengan kata-kata sendiri (bahasa daerah/Indonesia) */}
+                    {msg.status === 'pending' && (
+                      <div className="mt-3 bg-gray-50 border border-dashed border-gray-300 rounded-lg p-3">
+                        {ownReplyId === msg.id ? (
+                          <div className="space-y-2">
+                            <p className="text-[10px] font-bold uppercase tracking-wider text-gray-500">Balas Dengan Kata-Katamu Sendiri (akan diterjemahkan otomatis)</p>
+                            <textarea
+                              value={ownReplyText}
+                              onChange={e => setOwnReplyText(e.target.value)}
+                              placeholder="Tulis balasan dalam Bahasa Indonesia / bahasa daerah..."
+                              className="w-full text-sm text-gray-800 bg-white border border-gray-200 rounded-lg p-2.5 resize-none focus:outline-none focus:border-primary min-h-[70px]"
+                            />
+                            <div className="flex flex-wrap gap-2">
+                              <button
+                                onClick={() => handleSendOwnReply(msg.id)}
+                                disabled={busyId === msg.id || !ownReplyText.trim()}
+                                className="bg-primary text-white px-4 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 disabled:opacity-50"
+                              >
+                                <span className="material-symbols-outlined text-[14px]">translate</span> Terjemahkan & Kirim
+                              </button>
+                              <button
+                                onClick={() => { setOwnReplyId(null); setOwnReplyText(''); }}
+                                className="text-gray-500 px-3 py-1.5 rounded-lg text-xs font-semibold hover:bg-gray-100"
+                              >
+                                Batal
+                              </button>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="flex flex-wrap items-center gap-3">
+                            <button
+                              onClick={() => openOwnReply(msg)}
+                              className="flex items-center gap-1.5 text-gray-600 hover:text-primary font-bold text-[13px] transition-colors"
+                            >
+                              <span className="material-symbols-outlined text-[16px]">keyboard</span> Balas Sendiri (Teks)
+                            </button>
+                            {recordingId === msg.id ? (
+                              <button
+                                onClick={stopRecording}
+                                className="flex items-center gap-1.5 text-red-500 font-bold text-[13px] animate-pulse"
+                              >
+                                <span className="material-symbols-outlined text-[16px]">stop_circle</span> Stop ({duration}s)
+                              </button>
+                            ) : (
+                              <button
+                                onClick={() => handleStartVoiceReply(msg.id)}
+                                disabled={isRecording || busyId === msg.id}
+                                className="flex items-center gap-1.5 text-gray-600 hover:text-primary font-bold text-[13px] transition-colors disabled:opacity-50"
+                              >
+                                <span className="material-symbols-outlined text-[16px]">mic</span> Balas Sendiri (Suara)
+                              </button>
+                            )}
+                            <span className="text-[10px] text-gray-400">Bicara/ketik pakai bahasa daerah, AI yang menerjemahkan ke bahasa buyer</span>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {msg.status === 'approved' && msg.sellerReplyText && (
+                      <div className="mt-3 bg-gray-50 rounded-lg p-3 text-[11px] text-gray-500">
+                        <span className="font-bold uppercase tracking-wider">Kata asli penjual: </span>"{msg.sellerReplyText}"
+                      </div>
+                    )}
                   </div>
 
                   {/* Footer Actions */}
@@ -296,27 +415,27 @@ export default function WhatsAppPage() {
                             <button onClick={() => handleEdit(msg)} className="flex items-center gap-1.5 text-gray-500 hover:text-primary font-bold text-[13px] transition-colors">
                               <span className="material-symbols-outlined text-[16px]">edit_note</span> Edit Respon
                             </button>
-                            <button onClick={() => handleReject(msg.id)} className="flex items-center gap-1.5 text-red-500 hover:text-red-600 font-bold text-[13px] transition-colors">
+                            <button onClick={() => handleReject(msg.id)} disabled={busyId === msg.id} className="flex items-center gap-1.5 text-red-500 hover:text-red-600 font-bold text-[13px] transition-colors disabled:opacity-50">
                               <span className="material-symbols-outlined text-[16px]">close</span> Tolak
                             </button>
                           </>
                         )}
                       </div>
-                      
+
                       <div className="w-full md:w-auto order-1 md:order-2">
                         {editingId === msg.id ? (
-                          <button onClick={() => handleSaveEdit(msg.id)} className="w-full md:w-auto bg-primary text-white px-5 py-2 rounded-lg text-sm font-semibold flex items-center justify-center gap-2 active:scale-95 transition-transform">
+                          <button onClick={() => handleApprove(msg.id, editText)} disabled={busyId === msg.id} className="w-full md:w-auto bg-primary text-white px-5 py-2 rounded-lg text-sm font-semibold flex items-center justify-center gap-2 active:scale-95 transition-transform disabled:opacity-50">
                             <span className="material-symbols-outlined text-[16px]">send</span> Simpan & Kirim
                           </button>
                         ) : (
-                          <button onClick={() => handleApprove(msg.id)} className="w-full md:w-auto bg-primary text-white px-5 py-2 rounded-lg text-sm font-semibold flex items-center justify-center gap-2 active:scale-95 transition-all shadow-sm">
+                          <button onClick={() => handleApprove(msg.id)} disabled={busyId === msg.id} className="w-full md:w-auto bg-primary text-white px-5 py-2 rounded-lg text-sm font-semibold flex items-center justify-center gap-2 active:scale-95 transition-all shadow-sm disabled:opacity-50">
                             <span className="material-symbols-outlined text-[16px]">send</span> Approve & Kirim
                           </button>
                         )}
                       </div>
                     </div>
                   )}
-                  
+
                   {msg.status === 'approved' && (
                     <div className="px-5 py-3 bg-gray-50 flex items-center justify-center md:justify-start gap-1.5 text-green-700">
                       <span className="material-symbols-outlined text-[16px]">check_circle</span>

@@ -15,6 +15,13 @@ const envSchema = z.object({
   IMAGEKIT_URL_ENDPOINT: z.string(),
   FONNTE_API_KEY: z.string().optional(),
   AUDIO_OUTPUT_DIR: z.string().default(DEFAULT_AUDIO_DIR),
+  // URL publik API ini, dipakai untuk menyusun webhook URL Fonnte (mis. https://api.suaraekspor.com)
+  API_PUBLIC_URL: z.string().optional(),
+  // Nomor WhatsApp platform SuaraEkspor (format internasional tanpa '+', mis. 6289501116888) —
+  // satu nomor AI middleman untuk SEMUA penjual, bukan per-penjual.
+  WHATSAPP_PLATFORM_NUMBER: z.string().optional(),
+  // Kunci rahasia webhook WhatsApp (dipakai di query string ?secret=... saat setup webhook di Fonnte)
+  WHATSAPP_WEBHOOK_SECRET: z.string().optional(),
 });
 
 export type Env = z.infer<typeof envSchema>;

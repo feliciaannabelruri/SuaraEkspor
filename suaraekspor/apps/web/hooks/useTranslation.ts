@@ -83,7 +83,9 @@ export function useTranslation(overrideLang?: string) {
             localStorage.setItem(`se_translations_${userLang}`, JSON.stringify(translatedDict));
             setCustomTranslations(translatedDict);
           }).catch(err => {
-            console.error('Groq Translation failed, falling back to ID:', err);
+            // Sudah ada fallback ke Bahasa Indonesia di bawah — ini bukan error fatal,
+            // jadi pakai warn supaya tidak memicu overlay "Issue" di Next.js dev mode.
+            console.warn('Groq Translation failed, falling back to ID:', err?.message || err);
           }).finally(() => {
             setLoading(false);
           });

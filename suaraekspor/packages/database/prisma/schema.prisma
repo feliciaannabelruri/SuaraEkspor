@@ -31,6 +31,8 @@ model User {
   // Middleman relations
   managedSellers MiddlemanRelation[] @relation("AsMiddleman")
   managedBy      MiddlemanRelation[] @relation("AsSeller")
+  whatsappThreads WhatsappThread[]
+  whatsappMessages WhatsappMessage[]
 }
 
 enum UserRole {
@@ -76,6 +78,8 @@ model Product {
   listings             ProductListing[]
   conversations        Conversation[]
   transactions         Transaction[]
+  whatsappThreads      WhatsappThread[]
+  whatsappMessages     WhatsappMessage[]
 }
 
 enum ProductStatus {
@@ -176,6 +180,53 @@ enum MiddlemanStatus {
   PENDING
   APPROVED
   REJECTED
+}
+
+// ─── WhatsApp Integration (via Fonnte) ─────────────────────────────────────
+// Satu nomor WhatsApp AI milik platform SuaraEkspor (bukan per-penjual) —
+// penjual tidak perlu setup/connect apa pun. Routing ke penjual yang tepat
+// dilakukan lewat WhatsappThread, dipetakan dari kode referensi produk yang
+// disertakan saat buyer klik "Chat via WhatsApp" di halaman produk.
+
+model WhatsappThread {
+  id         String   @id @default(cuid())
+  buyerPhone String   @unique
+  buyerName  String?
+  sellerId   String
+  productId  String?
+  updatedAt  DateTime @updatedAt
+  createdAt  DateTime @default(now())
+
+  seller     User     @relation(fields: [sellerId], references: [id])
+  product    Product? @relation(fields: [productId], references: [id])
+}
+
+model WhatsappMessage {
+  id              String                @id @default(cuid())
+  sellerId        String
+  productId       String?
+  buyerPhone      String
+  buyerName       String?
+  originalText    String                @db.Text
+  originalLang    String?
+  translatedText  String?               @db.Text
+  aiReply         String?               @db.Text
+  sellerReplyText String?               @db.Text
+  sellerReplyLang String?
+  status          WhatsappMessageStatus @default(pending)
+  createdAt       DateTime              @default(now())
+  updatedAt       DateTime              @updatedAt
+
+  seller          User                  @relation(fields: [sellerId], references: [id])
+  product         Product?              @relation(fields: [productId], references: [id])
+
+  @@index([sellerId, status])
+}
+
+enum WhatsappMessageStatus {
+  pending
+  approved
+  rejected
 }
 
 // ─── Notifications ────────────────────────────────────────────────────────

@@ -9,7 +9,7 @@ import { useTranslation } from '@/hooks/useTranslation';
 
 export default function Sidebar() {
   const pathname = usePathname();
-  const { isMiddleman, activeUMKM, handleToggleMiddleman } = useMiddleman();
+  const { isMiddleman, activeUMKM } = useMiddleman();
 
   const isDashboard = pathname === '/dashboard' || pathname.startsWith('/product');
   const isUpload = pathname === '/upload';
@@ -20,6 +20,7 @@ export default function Sidebar() {
   const isProfile = pathname === '/profile';
 
   const [unreadCount, setUnreadCount] = useState(0);
+  const [waPendingCount, setWaPendingCount] = useState(0);
   const [user, setUser] = useState<{ name?: string; businessName?: string; localLanguage?: string } | null>(null);
 
   const { t } = useTranslation(isMiddleman && activeUMKM ? 'id' : undefined);
@@ -34,6 +35,11 @@ export default function Sidebar() {
       const list = res.data?.data || [];
       const withMessages = list.filter((c: any) => c.messages?.length > 0).length;
       setUnreadCount(withMessages);
+    }).catch(() => {});
+
+    apiClient.get('/whatsapp/messages').then(res => {
+      const list = res.data?.data || [];
+      setWaPendingCount(list.filter((m: any) => m.status === 'pending').length);
     }).catch(() => {});
   }, [pathname]);
 
@@ -98,9 +104,16 @@ export default function Sidebar() {
           <span className={`material-symbols-outlined text-[20px] ${!isPanduan ? 'group-hover:text-white' : ''}`} style={{ fontVariationSettings: isPanduan ? "'FILL' 1" : "'FILL' 0" }}>menu_book</span>
           <span className="text-sm">{t('sbPanduan')}</span>
         </Link>
-        <Link href="/whatsapp" className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all group ${isWhatsapp ? 'bg-secondary-container text-white font-semibold' : 'text-on-primary/70 hover:bg-white/10'}`}>
-          <span className={`material-symbols-outlined text-[20px] ${!isWhatsapp ? 'group-hover:text-white' : ''}`} style={{ fontVariationSettings: isWhatsapp ? "'FILL' 1" : "'FILL' 0" }}>chat</span>
-          <span className="text-sm">{t('sbWhatsapp')}</span>
+        <Link href="/whatsapp" className={`flex items-center justify-between px-3 py-2.5 rounded-lg transition-all group ${isWhatsapp ? 'bg-secondary-container text-white font-semibold' : 'text-on-primary/70 hover:bg-white/10'}`}>
+          <div className="flex items-center gap-3">
+            <span className={`material-symbols-outlined text-[20px] ${!isWhatsapp ? 'group-hover:text-white' : ''}`} style={{ fontVariationSettings: isWhatsapp ? "'FILL' 1" : "'FILL' 0" }}>chat</span>
+            <span className="text-sm">{t('sbWhatsapp')}</span>
+          </div>
+          {waPendingCount > 0 && (
+            <span className="bg-red-500 text-white text-[9px] font-extrabold px-1.5 py-0.5 rounded-full leading-none">
+              {waPendingCount}
+            </span>
+          )}
         </Link>
         <Link href="/profile" className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all group ${isProfile ? 'bg-secondary-container text-white font-semibold' : 'text-on-primary/70 hover:bg-white/10'}`}>
           <span className={`material-symbols-outlined text-[20px] ${!isProfile ? 'group-hover:text-white' : ''}`} style={{ fontVariationSettings: isProfile ? "'FILL' 1" : "'FILL' 0" }}>person</span>
@@ -108,15 +121,27 @@ export default function Sidebar() {
         </Link>
       </nav>
 
-      {/* Bottom CTA (Middleman Toggle) */}
-      <div className="mt-auto">
-        <button
-          onClick={handleToggleMiddleman}
+      {/* Bottom CTA (Kelola UMKM Lain + Logout) */}
+      <div className="mt-auto space-y-2">
+        <Link
+          href="/kelola-umkm"
           className={`w-full border py-2.5 px-3 rounded-lg text-sm transition-colors flex items-center justify-center gap-2 ${isMiddleman ? 'bg-secondary-container text-white border-secondary-container' : 'border-on-primary/30 text-on-primary hover:bg-white/5'
             }`}
         >
           <span className="material-symbols-outlined text-[18px]">support_agent</span>
           {isMiddleman ? t('sbMiddlemanMode') : t('sbMiddlemanTry')}
+        </Link>
+        <button
+          onClick={() => {
+            localStorage.removeItem('se_token');
+            localStorage.removeItem('se_user');
+            localStorage.removeItem('se_active_umkm');
+            window.location.href = '/';
+          }}
+          className="w-full py-2.5 px-3 rounded-lg text-sm bg-red-600 hover:bg-red-700 text-white font-bold transition-colors flex items-center justify-center gap-2"
+        >
+          <span className="material-symbols-outlined text-[18px]">logout</span>
+          {t('nvLogout')}
         </button>
       </div>
     </aside>

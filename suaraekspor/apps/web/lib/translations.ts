@@ -8,8 +8,8 @@ export const TRANSLATIONS: Record<string, Record<string, string>> = {
     sbPanduan: 'Panduan Ekspor',
     sbWhatsapp: 'Integrasi WhatsApp',
     sbProfile: 'Profil Saya',
-    sbMiddlemanTry: 'Coba Middleman',
-    sbMiddlemanMode: 'Mode Middleman',
+    sbMiddlemanTry: 'Kelola UMKM Lain',
+    sbMiddlemanMode: 'Mode Kelola Aktif',
 
     // Dashboard
     dashboard: 'Dashboard',
@@ -243,8 +243,8 @@ export const TRANSLATIONS: Record<string, Record<string, string>> = {
     sbPanduan: 'Panduan Ekspor',
     sbWhatsapp: 'Integrasi WhatsApp',
     sbProfile: 'Profil Kula',
-    sbMiddlemanTry: 'Coba Middleman',
-    sbMiddlemanMode: 'Mode Middleman',
+    sbMiddlemanTry: 'Kelola UMKM Lain',
+    sbMiddlemanMode: 'Mode Kelola Aktif',
 
     // Dashboard
     dashboard: 'Dasbor',
@@ -301,8 +301,8 @@ export const TRANSLATIONS: Record<string, Record<string, string>> = {
     sbPanduan: 'Panduan Ekspor',
     sbWhatsapp: 'Integrasi WhatsApp',
     sbProfile: 'Profil Abdi',
-    sbMiddlemanTry: 'Coba Middleman',
-    sbMiddlemanMode: 'Mode Middleman',
+    sbMiddlemanTry: 'Kelola UMKM Lain',
+    sbMiddlemanMode: 'Mode Kelola Aktif',
 
     // Dashboard
     dashboard: 'Dasbor',
@@ -359,8 +359,8 @@ export const TRANSLATIONS: Record<string, Record<string, string>> = {
     sbPanduan: 'Panduan Ekspor',
     sbWhatsapp: 'Integrasi WhatsApp',
     sbProfile: 'Profilhu',
-    sbMiddlemanTry: 'Coba Middleman',
-    sbMiddlemanMode: 'Mode Middleman',
+    sbMiddlemanTry: 'Kelola UMKM Lain',
+    sbMiddlemanMode: 'Mode Kelola Aktif',
 
     // Dashboard
     dashboard: 'Dashboard',
@@ -417,8 +417,8 @@ export const TRANSLATIONS: Record<string, Record<string, string>> = {
     sbPanduan: 'Panduan Ekspor',
     sbWhatsapp: 'Integrasi WhatsApp',
     sbProfile: 'Profil Tiyang',
-    sbMiddlemanTry: 'Coba Middleman',
-    sbMiddlemanMode: 'Mode Middleman',
+    sbMiddlemanTry: 'Kelola UMKM Lain',
+    sbMiddlemanMode: 'Mode Kelola Aktif',
 
     // Dashboard
     dashboard: 'Dasbor',
@@ -475,8 +475,8 @@ export const TRANSLATIONS: Record<string, Record<string, string>> = {
     sbPanduan: 'Panduan Ekspor',
     sbWhatsapp: 'Integrasi WhatsApp',
     sbProfile: 'Profil Denai',
-    sbMiddlemanTry: 'Coba Middleman',
-    sbMiddlemanMode: 'Mode Middleman',
+    sbMiddlemanTry: 'Kelola UMKM Lain',
+    sbMiddlemanMode: 'Mode Kelola Aktif',
 
     // Dashboard
     dashboard: 'Dasbor',
@@ -533,8 +533,8 @@ export const TRANSLATIONS: Record<string, Record<string, string>> = {
     sbPanduan: 'Panduan Ekspor',
     sbWhatsapp: 'Integrasi WhatsApp',
     sbProfile: 'Profilku',
-    sbMiddlemanTry: 'Coba Middleman',
-    sbMiddlemanMode: 'Mode Middleman',
+    sbMiddlemanTry: 'Kelola UMKM Lain',
+    sbMiddlemanMode: 'Mode Kelola Aktif',
 
     // Dashboard
     dashboard: 'Dasbor',
@@ -591,8 +591,8 @@ export const TRANSLATIONS: Record<string, Record<string, string>> = {
     sbPanduan: 'Panduan Ekspor',
     sbWhatsapp: 'Integrasi WhatsApp',
     sbProfile: 'Profil Kula',
-    sbMiddlemanTry: 'Coba Middleman',
-    sbMiddlemanMode: 'Mode Middleman',
+    sbMiddlemanTry: 'Kelola UMKM Lain',
+    sbMiddlemanMode: 'Mode Kelola Aktif',
 
     // Dashboard
     dashboard: 'Dasbor',
@@ -649,8 +649,8 @@ export const TRANSLATIONS: Record<string, Record<string, string>> = {
     sbPanduan: 'Panduan Ekspor',
     sbWhatsapp: 'Integrasi WhatsApp',
     sbProfile: 'Profil Ulun',
-    sbMiddlemanTry: 'Coba Middleman',
-    sbMiddlemanMode: 'Mode Middleman',
+    sbMiddlemanTry: 'Kelola UMKM Lain',
+    sbMiddlemanMode: 'Mode Kelola Aktif',
 
     // Dashboard
     dashboard: 'Dasbor',

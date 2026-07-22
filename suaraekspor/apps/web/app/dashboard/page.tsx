@@ -244,6 +244,7 @@ export default function DashboardPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [transactions, setTransactions] = useState<any[]>([]);
   const [conversations, setConversations] = useState<any[]>([]);
+  const [whatsappMessages, setWhatsappMessages] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
@@ -269,11 +270,13 @@ export default function DashboardPage() {
       apiClient.get('/products'),
       apiClient.get('/transactions').catch(() => ({ data: { data: [] } })),
       apiClient.get('/conversations').catch(() => ({ data: { data: [] } })),
+      apiClient.get('/whatsapp/messages').catch(() => ({ data: { data: [] } })),
     ])
-      .then(([productsRes, transactionsRes, conversationsRes]) => {
+      .then(([productsRes, transactionsRes, conversationsRes, whatsappRes]) => {
         setProducts(productsRes.data.data ?? []);
         setTransactions(transactionsRes.data.data ?? []);
         setConversations(conversationsRes.data.data ?? []);
+        setWhatsappMessages(whatsappRes.data.data ?? []);
       })
       .catch((err) => {
         console.error('Failed to load dashboard data:', err);
@@ -322,14 +325,15 @@ export default function DashboardPage() {
     .filter(t => t.status !== 'cancelled')
     .reduce((acc, t) => acc + t.totalUsd, 0);
 
-  const newMessagesCount = conversations.length;
+  const whatsappPendingCount = whatsappMessages.filter((m: any) => m.status === 'pending').length;
+  const newMessagesCount = conversations.length + whatsappPendingCount;
 
   // 1. Total View (data asli dari kunjungan halaman produk buyer)
   const totalViews = products.reduce((acc, p) => acc + (p.viewCount ?? 0), 0);
   const viewChangePct = totalViews > 0 ? "+15%" : "+0%";
 
-  // 2. Negosiasi Aktif (sesuai jumlah utas chat)
-  const activeNegotiations = conversations.length;
+  // 2. Negosiasi Aktif (sesuai jumlah utas chat, termasuk inbox WhatsApp)
+  const activeNegotiations = conversations.length + whatsappPendingCount;
 
   // 3. Skor Toko (Rata-rata Export Readiness Score)
   const averageReadinessScore = products.length > 0
@@ -407,6 +411,19 @@ export default function DashboardPage() {
       icon: 'mail',
       iconBg: 'bg-blue-50',
       iconColor: 'text-blue-500',
+    });
+  }
+
+  if (whatsappMessages.length > 0) {
+    const latestWa = whatsappMessages[0];
+    const buyerLabel = latestWa.buyerName || latestWa.buyerPhone;
+    activities.push({
+      id: `wa-${latestWa.id}`,
+      text: `Pesan WhatsApp baru dari ${buyerLabel}, sudah diterjemahkan AI dan menunggu persetujuan Anda.`,
+      time: 'Beberapa saat yang lalu',
+      icon: 'chat',
+      iconBg: 'bg-green-50',
+      iconColor: 'text-green-600',
     });
   }
 

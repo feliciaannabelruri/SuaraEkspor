@@ -42,6 +42,14 @@ export interface CommunicationAgentResult {
   summaryAudioUrl?: string;
 }
 
+export interface WhatsappAgentResult {
+  replyToBuyer: string;
+  replyLanguage: string;
+  detectedBuyerLanguage: string;
+  translatedText: string;
+  summaryForSeller: string;
+}
+
 export interface AIPipelineStatus {
   productId: string;
   stage: 'stt' | 'vision' | 'listing' | 'pricing' | 'done' | 'error';
