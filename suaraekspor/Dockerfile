@@ -48,4 +48,9 @@ RUN npm run build --workspace=packages/ai-engine
 ENV PORT=4000
 EXPOSE 4000
 
+# This image only ever runs as a deployed container, so default NODE_ENV to
+# production rather than falling back to zod's 'development' default — the
+# platform's own env var config (if any) still overrides this.
+ENV NODE_ENV=production
+
 CMD ["npx", "ts-node", "--transpile-only", "apps/api/src/index.ts"]
