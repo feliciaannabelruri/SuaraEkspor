@@ -8,10 +8,12 @@ import userRoutes from './user.routes';
 import middlemanRoutes from './middleman.routes';
 import notificationRoutes from './notification.routes';
 import whatsappRoutes from './whatsapp.routes';
+import impactRoutes from './impact.routes';
 
 const router = Router();
 
 router.use('/auth', authRoutes);
+router.use('/impact', impactRoutes);
 router.use('/products', productRoutes);
 router.use('/marketplace', marketplaceRoutes);
 router.use('/conversations', conversationRoutes);

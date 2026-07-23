@@ -7,6 +7,7 @@ import Link from 'next/link';
 import { useMiddleman } from "../context/middleman-context";
 import { useVoiceRecorder } from '@/hooks/useVoiceRecorder';
 import { useAIPipeline } from '@/hooks/useAIPipeline';
+import { useImageQualityCheck, PhotoQualityWarning } from '@/hooks/useImageQualityCheck';
 import apiClient from '@/lib/api-client';
 import ErrorState from '../../components/ui/ErrorState';
 import MobileBottomNav from '../../components/layout/MobileBottomNav';
@@ -34,6 +35,13 @@ const LANG_NAMES: Record<string, string> = {
   en: 'English', zh: '中文', ar: 'العربية', ja: '日本語', de: 'Deutsch', id: 'Bahasa Indonesia',
 };
 
+const QUALITY_WARNING_LABELS: Record<PhotoQualityWarning, string> = {
+  blurry: 'Foto buram',
+  too_dark: 'Terlalu gelap',
+  too_bright: 'Terlalu terang',
+  no_subject: 'Objek kurang jelas',
+};
+
 export default function UploadPage() {
   const router = useRouter();
   const pathname = usePathname();
@@ -44,6 +52,7 @@ export default function UploadPage() {
   const [photoPreviews, setPhotoPreviews] = useState<string[]>([]);
   const { isRecording, audioBlob, duration, startRecording, stopRecording, resetRecording } = useVoiceRecorder();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const { checking: checkingQuality, results: qualityResults, checkPhotos, clearResults: clearQualityResults } = useImageQualityCheck();
 
   // Step 2 — Processing
   const [productId, setProductId] = useState<string | null>(null);
@@ -71,10 +80,6 @@ export default function UploadPage() {
         router.push('/login');
         return;
       }
-      try {
-        const u = localStorage.getItem('se_user');
-        if (u) setUser(JSON.parse(u));
-      } catch (_) {}
     }
   }, [router]);
 
@@ -114,6 +119,8 @@ export default function UploadPage() {
     setPhotos(files);
     const urls = files.map(f => URL.createObjectURL(f));
     setPhotoPreviews(urls);
+    clearQualityResults();
+    checkPhotos(files).catch((err) => console.error('Cek kualitas foto gagal:', err));
   }
 
   async function handleSubmit() {
@@ -361,7 +368,7 @@ export default function UploadPage() {
                 </p>
                 <div className="flex flex-col gap-2 w-full">
                   <button
-                    onClick={() => { setShowDiscardConfirm(false); setAiResult(null); setProductId(null); setPhotos([]); setPhotoPreviews([]); }}
+                    onClick={() => { setShowDiscardConfirm(false); setAiResult(null); setProductId(null); setPhotos([]); setPhotoPreviews([]); clearQualityResults(); }}
                     className="w-full bg-error text-white font-bold text-sm py-3 rounded-xl hover:opacity-90 active:scale-95 transition-all"
                   >
                     Ya, Upload Ulang
@@ -664,15 +671,58 @@ export default function UploadPage() {
                 />
 
                 {photoPreviews.length > 0 ? (
-                  <div className="flex gap-3 mt-2 overflow-x-auto pb-2">
-                    {photoPreviews.map((url, i) => (
-                      <div key={i} className="w-16 h-16 md:w-20 md:h-20 rounded-md border border-gray-200 bg-gray-50 flex items-center justify-center flex-shrink-0 overflow-hidden">
-                        <img src={url} alt={`Preview ${i + 1}`} className="w-full h-full object-cover" />
+                  <div className="mt-2">
+                    <div className="flex gap-3 overflow-x-auto pb-2">
+                      {photoPreviews.map((url, i) => {
+                        const quality = qualityResults[i];
+                        const hasWarnings = !!quality?.warnings.length;
+                        return (
+                          <div key={i} className="relative w-16 h-16 md:w-20 md:h-20 rounded-md border border-gray-200 bg-gray-50 flex items-center justify-center flex-shrink-0 overflow-hidden">
+                            <img src={url} alt={`Preview ${i + 1}`} className="w-full h-full object-cover" />
+                            {checkingQuality && !quality && (
+                              <span className="absolute inset-0 flex items-center justify-center bg-white/60">
+                                <span className="material-symbols-outlined text-gray-400 text-[16px] animate-spin">progress_activity</span>
+                              </span>
+                            )}
+                            {quality && (
+                              <span
+                                className={`absolute top-1 right-1 w-4 h-4 rounded-full flex items-center justify-center text-white ${hasWarnings ? 'bg-amber-500' : 'bg-primary'}`}
+                                title={hasWarnings ? quality.warnings.map(w => QUALITY_WARNING_LABELS[w]).join(', ') : 'Kualitas foto baik'}
+                              >
+                                <span className="material-symbols-outlined text-[11px]" style={{ fontVariationSettings: "'FILL' 1" }}>
+                                  {hasWarnings ? 'priority_high' : 'check'}
+                                </span>
+                              </span>
+                            )}
+                          </div>
+                        );
+                      })}
+                      <button onClick={() => fileInputRef.current?.click()} className="w-16 h-16 md:w-20 md:h-20 rounded-md border border-gray-200 bg-gray-50 flex items-center justify-center border-dashed flex-shrink-0 hover:border-gray-400 transition-colors">
+                        <span className="material-symbols-outlined text-gray-400 text-[20px]">add</span>
+                      </button>
+                    </div>
+
+                    {/* On-device photo quality feedback (runs locally in the browser, no upload needed) */}
+                    {checkingQuality && (
+                      <p className="text-[10px] text-gray-400 mt-1.5">Memeriksa kualitas foto di perangkat Anda...</p>
+                    )}
+                    {!checkingQuality && Object.values(qualityResults).some(q => q.warnings.length > 0) && (
+                      <div className="mt-2 bg-amber-50 border border-amber-100 rounded-lg p-3 flex gap-2 items-start">
+                        <span className="material-symbols-outlined text-amber-500 text-[16px] shrink-0 mt-0.5">warning</span>
+                        <div className="text-[11px] text-amber-700 leading-relaxed">
+                          <p className="font-bold mb-0.5">Beberapa foto perlu diperbaiki:</p>
+                          <ul className="space-y-0.5">
+                            {photoPreviews.map((_, i) => {
+                              const warnings = qualityResults[i]?.warnings ?? [];
+                              if (!warnings.length) return null;
+                              return (
+                                <li key={i}>Foto {i + 1}: {warnings.map(w => QUALITY_WARNING_LABELS[w]).join(', ')}</li>
+                              );
+                            })}
+                          </ul>
+                        </div>
                       </div>
-                    ))}
-                    <button onClick={() => fileInputRef.current?.click()} className="w-16 h-16 md:w-20 md:h-20 rounded-md border border-gray-200 bg-gray-50 flex items-center justify-center border-dashed flex-shrink-0 hover:border-gray-400 transition-colors">
-                      <span className="material-symbols-outlined text-gray-400 text-[20px]">add</span>
-                    </button>
+                    )}
                   </div>
                 ) : (
                   <div className="grid grid-cols-4 gap-3 mt-2">
