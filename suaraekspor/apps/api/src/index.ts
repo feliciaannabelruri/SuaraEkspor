@@ -1,5 +1,4 @@
 import 'dotenv/config';
-console.log("INDEX.TS START: GROQ API KEY IS", process.env.GROQ_API_KEY);
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';

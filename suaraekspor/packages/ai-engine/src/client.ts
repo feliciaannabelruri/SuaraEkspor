@@ -2,7 +2,6 @@ import OpenAI from 'openai';
 
 // Groq API is OpenAI-compatible — we reuse the official `openai` SDK
 // and just point it at Groq's endpoint instead of switching SDKs.
-console.log("GROQ API KEY IS", process.env.GROQ_API_KEY);
 export const groq = new OpenAI({
   apiKey: process.env.GROQ_API_KEY,
   baseURL: 'https://api.groq.com/openai/v1',
