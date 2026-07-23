@@ -145,9 +145,6 @@ function RegisterContent() {
                 {loading ? 'Mengirim...' : 'Daftar & Kirim Kode OTP'}
               </button>
 
-              <div className="text-center text-gray-400 text-xs mt-2 mb-4">
-                Mode prototype — gunakan kode <strong>123456</strong>
-              </div>
 
               <div className="flex items-center gap-4 py-2">
                 <div className="h-px flex-1 bg-outline-variant/50"></div>
@@ -158,12 +155,6 @@ function RegisterContent() {
                 <p className="font-body-md text-xs md:text-sm text-on-surface-variant">
                   Sudah punya akun?{' '}
                   <Link href={`/login?role=${role}`} className="text-secondary font-bold hover:underline">Masuk</Link>
-                </p>
-              </div>
-              <div className="bg-surface-container-low p-3 md:p-4 rounded-lg flex items-start gap-3 mt-6 md:mt-8">
-                <span className="material-symbols-outlined text-primary text-[18px] md:text-[20px] mt-0.5">info</span>
-                <p className="text-[11px] md:text-[12px] leading-tight text-on-surface-variant">
-                  Mode demo: verifikasi WhatsApp asli belum aktif. Gunakan kode <strong>123456</strong> di halaman berikutnya untuk masuk.
                 </p>
               </div>
             </form>

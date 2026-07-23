@@ -124,7 +124,7 @@ function VerifyContent() {
 
           <h2 className="font-headline-sm md:text-headline-md text-primary mb-1 md:mb-2">Verifikasi Nomor Anda</h2>
           <p className="text-sm md:text-base text-on-surface-variant mb-6 md:mb-8">
-            Kode verifikasi untuk <span className="font-bold text-on-surface">{phone || '+62 812-XXXX-XXXX'}</span> — mode demo, gunakan <span className="font-bold text-on-surface">123456</span>
+            Kode verifikasi telah dikirim ke <span className="font-bold text-on-surface">{phone || '+62 812-XXXX-XXXX'}</span> via WhatsApp
           </p>
 
           <form className="space-y-6 md:space-y-8" onSubmit={handleVerify}>
@@ -168,7 +168,7 @@ function VerifyContent() {
               </svg>
             </div>
             <p className="text-xs md:text-sm text-on-surface-variant leading-tight">
-              Mode demo: pengiriman OTP via WhatsApp belum aktif (roadmap). Gunakan kode <strong>123456</strong> untuk melanjutkan.
+              Kode OTP dikirim melalui WhatsApp ke nomor yang Anda daftarkan.
             </p>
           </div>
         </div>
