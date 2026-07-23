@@ -4,7 +4,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import apiClient from '@/lib/api-client';
 
-function LoginContent() {
+function RegisterContent() {
   const [phone, setPhone] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -12,7 +12,7 @@ function LoginContent() {
   const params = useSearchParams();
   const [role, setRole] = useState(params.get('role') ?? 'seller');
 
-  const handleLogin = async (e: React.FormEvent) => {
+  const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!phone || phone.length < 8) {
       setError('Masukkan nomor WhatsApp yang valid');
@@ -35,7 +35,6 @@ function LoginContent() {
       setLoading(false);
     }
   };
-
 
   return (
     <>
@@ -87,12 +86,12 @@ function LoginContent() {
           </div>
         </section>
 
-        {/* Right Column: Login Action */}
+        {/* Right Column: Register Action */}
         <section className="w-full md:w-1/2 bg-white md:bg-background flex flex-col items-center justify-start md:justify-center p-6 md:p-16 -mt-8 md:mt-0 relative z-20 rounded-t-3xl md:rounded-none min-h-[60vh] md:min-h-0">
           <div className="w-full max-w-md bg-white md:p-8 rounded-none md:rounded-xl border-none md:border md:border-outline-variant/30 shadow-none md:shadow-sm">
             <div className="text-center md:text-left mb-6 mt-2 md:mt-0">
-              <h2 className="font-headline-sm md:text-headline-md text-primary mb-1 md:mb-2">Masuk ke SuaraEkspor</h2>
-              <p className="font-body-md text-xs md:text-sm text-on-surface-variant">Pilih tipe akun Anda di bawah untuk melanjutkan.</p>
+              <h2 className="font-headline-sm md:text-headline-md text-primary mb-1 md:mb-2">Daftar ke SuaraEkspor</h2>
+              <p className="font-body-md text-xs md:text-sm text-on-surface-variant">Pilih tipe akun Anda di bawah untuk membuat akun baru.</p>
             </div>
 
             {/* Role Switcher */}
@@ -101,8 +100,8 @@ function LoginContent() {
                 type="button"
                 onClick={() => { setRole('seller'); setError(''); }}
                 className={`flex-1 py-2.5 rounded-lg text-xs font-bold transition-all ${
-                  role === 'seller' 
-                    ? 'bg-primary text-white shadow-sm' 
+                  role === 'seller'
+                    ? 'bg-primary text-white shadow-sm'
                     : 'text-primary/65 hover:text-primary hover:bg-white/40'
                 }`}
               >
@@ -112,8 +111,8 @@ function LoginContent() {
                 type="button"
                 onClick={() => { setRole('buyer'); setError(''); }}
                 className={`flex-1 py-2.5 rounded-lg text-xs font-bold transition-all ${
-                  role === 'buyer' 
-                    ? 'bg-primary text-white shadow-sm' 
+                  role === 'buyer'
+                    ? 'bg-primary text-white shadow-sm'
                     : 'text-primary/65 hover:text-primary hover:bg-white/40'
                 }`}
               >
@@ -121,7 +120,7 @@ function LoginContent() {
               </button>
             </div>
 
-            <form className="space-y-5 md:space-y-6" onSubmit={handleLogin}>
+            <form className="space-y-5 md:space-y-6" onSubmit={handleRegister}>
               <div className="space-y-2">
                 <label className="font-label-caps text-xs text-on-surface-variant">NOMOR WHATSAPP</label>
                 <div className="relative">
@@ -143,7 +142,7 @@ function LoginContent() {
                 type="submit"
                 disabled={loading}
               >
-                {loading ? 'Mengirim...' : 'Kirim Kode OTP'}
+                {loading ? 'Mengirim...' : 'Daftar & Kirim Kode OTP'}
               </button>
 
               <div className="text-center text-gray-400 text-xs mt-2 mb-4">
@@ -157,8 +156,8 @@ function LoginContent() {
               </div>
               <div className="text-center">
                 <p className="font-body-md text-xs md:text-sm text-on-surface-variant">
-                  Belum punya akun?{' '}
-                  <Link href={`/register?role=${role}`} className="text-secondary font-bold hover:underline">Daftar Sekarang</Link>
+                  Sudah punya akun?{' '}
+                  <Link href={`/login?role=${role}`} className="text-secondary font-bold hover:underline">Masuk</Link>
                 </p>
               </div>
               <div className="bg-surface-container-low p-3 md:p-4 rounded-lg flex items-start gap-3 mt-6 md:mt-8">
@@ -171,15 +170,14 @@ function LoginContent() {
           </div>
         </section>
       </main>
-
     </>
   );
 }
 
-export default function LoginPage() {
+export default function RegisterPage() {
   return (
     <Suspense>
-      <LoginContent />
+      <RegisterContent />
     </Suspense>
   );
 }
