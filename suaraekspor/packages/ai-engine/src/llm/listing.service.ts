@@ -71,7 +71,7 @@ Instruksi:
 - Deskripsi untuk bahasa id: 150-250 kata, fokus pada apa yang terlihat di foto (bahan, bentuk, motif, fungsi, keunikan)
 - Untuk bahasa lain: terjemahkan nama & deskripsi yang sama secara natural
 
-Format JSON (wajib 6 bahasa: id, en, zh, ar, ja, de):
+Format JSON (wajib 6 bahasa, urutan berikut PENTING — hasilkan bahasa non-Latin lebih dulu supaya tidak terpotong jika respons panjang: id, zh, ar, ja, en, de):
 {
   "listings": [
     {
@@ -97,7 +97,10 @@ exportReadinessScore: 0-100.`;
         { role: 'system', content: systemPrompt },
         { role: 'user', content: userPrompt },
       ],
-      max_tokens: 4500,
+      // Non-Latin scripts (zh/ar/ja) use noticeably more tokens per character than
+      // Latin ones — 6 full title+description+keywords in one response needs more
+      // headroom than 4500, or the later languages in the array get cut off/empty.
+      max_tokens: 7000,
       response_format: { type: 'json_object' },
     },
     listingGenerationSchema,
