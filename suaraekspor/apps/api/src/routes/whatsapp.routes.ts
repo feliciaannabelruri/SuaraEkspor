@@ -19,6 +19,31 @@ function extractProductRef(text: string): { productId: string | null; cleanText:
   return { productId: match[1], cleanText: text.replace(REF_TAG_REGEX, '').trim() };
 }
 
+// Fonnte's incoming-message webhook can fire for messages the platform's own
+// device sends (including our own auto-replies) — Fonnte's docs explicitly warn
+// that webhook handlers must filter these out themselves, otherwise a reply
+// sent from this route gets delivered back here as a "new" message and the bot
+// ends up replying to itself in an infinite loop (this happened in prod: one
+// real buyer message produced 900+ outgoing messages).
+function isFromPlatformNumber(sender: string): boolean {
+  if (!env.WHATSAPP_PLATFORM_NUMBER) return false;
+  const normalize = (n: string) => n.replace(/\D/g, '').replace(/^0/, '62');
+  return normalize(sender) === normalize(env.WHATSAPP_PLATFORM_NUMBER);
+}
+
+// Second, independent guard against the same runaway-loop failure mode: even if
+// isFromPlatformNumber() somehow misses an echoed event, this caps the unsolicited
+// fallback reply to once per buyer per cooldown window instead of once per webhook hit.
+const fallbackSentAt = new Map<string, number>();
+const FALLBACK_COOLDOWN_MS = 5 * 60 * 1000;
+function shouldSendFallback(sender: string): boolean {
+  const last = fallbackSentAt.get(sender);
+  const now = Date.now();
+  if (last && now - last < FALLBACK_COOLDOWN_MS) return false;
+  fallbackSentAt.set(sender, now);
+  return true;
+}
+
 // ─── Webhook publik (dipanggil oleh Fonnte saat ada pesan WhatsApp masuk ke nomor platform) ──
 // Satu nomor untuk SEMUA penjual — otentikasi lewat secret di query string, bukan per-seller.
 router.post('/webhook', async (req: Request, res: Response) => {
@@ -34,6 +59,11 @@ router.post('/webhook', async (req: Request, res: Response) => {
 
     if (!sender || !rawMessage) {
       return res.status(400).json({ success: false, error: 'Payload webhook tidak lengkap' });
+    }
+
+    // Echo of our own outgoing message — ignore, or every reply we send loops forever.
+    if (isFromPlatformNumber(sender)) {
+      return res.json({ success: true, data: null });
     }
 
     const { productId: refProductId, cleanText: message } = extractProductRef(rawMessage);
@@ -65,7 +95,7 @@ router.post('/webhook', async (req: Request, res: Response) => {
 
     if (!sellerId) {
       // Buyer belum pernah terhubung ke penjual manapun — kita tidak tahu ini soal produk siapa.
-      if (env.FONNTE_API_KEY) {
+      if (env.FONNTE_API_KEY && shouldSendFallback(sender)) {
         await fonnteSendMessage(
           env.FONNTE_API_KEY,
           sender,
