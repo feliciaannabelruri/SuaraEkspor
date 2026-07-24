@@ -19,6 +19,7 @@ export async function runAIPipeline(
   productId: string,
   audioFilePath: string | null,
   photoFilePaths: string[],
+  typedDescription: string | null = null,
 ): Promise<void> {
   try {
     // --- STAGE 1: Upload foto ke Cloudinary ---
@@ -35,9 +36,21 @@ export async function runAIPipeline(
       data: { photoUrls },
     });
 
-    // --- STAGE 2: STT — Transkripsi audio ---
+    // --- STAGE 2: STT — Transkripsi audio (dilewati jika penjual mengetik deskripsi manual) ---
     let sttResult = null;
-    if (audioFilePath) {
+    if (typedDescription) {
+      await updatePipelineStage(productId, 'stt', 25);
+      sttResult = {
+        transcript: typedDescription,
+        detectedLanguage: 'id',
+        confidence: 1,
+        durationSeconds: 0,
+      };
+      await prisma.product.update({
+        where: { id: productId },
+        data: { originalTranscript: typedDescription, detectedLanguage: 'id' },
+      });
+    } else if (audioFilePath) {
       await updatePipelineStage(productId, 'stt', 25);
       try {
         sttResult = await transcribeAudio(audioFilePath);

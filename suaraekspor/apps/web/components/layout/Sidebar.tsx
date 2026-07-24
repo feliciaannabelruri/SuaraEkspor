@@ -44,7 +44,7 @@ export default function Sidebar() {
   }, [pathname]);
 
   return (
-    <aside className="hidden md:flex w-56 bg-primary text-on-primary fixed h-screen flex-col py-6 px-4 z-40">
+    <aside className="hidden md:flex w-56 bg-primary text-on-primary fixed h-screen flex-col py-6 px-4 z-40 overflow-y-auto">
       {/* Brand Logo */}
       <div className="mb-8">
         <Link href="/">

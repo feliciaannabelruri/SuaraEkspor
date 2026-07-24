@@ -7,6 +7,7 @@ export async function createProduct(req: AuthRequest, res: Response) {
   const photos = req.files as { [fieldname: string]: Express.Multer.File[] };
   const audio = photos['audio']?.[0];
   const productPhotos = photos['photos'] ?? [];
+  const typedDescription = typeof req.body.description === 'string' ? req.body.description.trim() : '';
 
   if (productPhotos.length === 0) {
     return res.status(400).json({ success: false, error: 'Minimal 1 foto produk diperlukan' });
@@ -20,6 +21,7 @@ export async function createProduct(req: AuthRequest, res: Response) {
     product.id,
     audio?.path ?? null,
     productPhotos.map((f: Express.Multer.File) => f.path),
+    typedDescription || null,
   ).catch((err: Error) => console.error(err));
 
   return res.status(202).json({

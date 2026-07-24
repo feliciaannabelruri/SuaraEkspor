@@ -51,6 +51,8 @@ export default function UploadPage() {
   const [photos, setPhotos] = useState<File[]>([]);
   const [photoPreviews, setPhotoPreviews] = useState<string[]>([]);
   const { isRecording, audioBlob, duration, startRecording, stopRecording, resetRecording } = useVoiceRecorder();
+  const [useTextInput, setUseTextInput] = useState(false);
+  const [typedDescription, setTypedDescription] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { checking: checkingQuality, results: qualityResults, checkPhotos, clearResults: clearQualityResults } = useImageQualityCheck();
 
@@ -130,7 +132,9 @@ export default function UploadPage() {
     try {
       const formData = new FormData();
       photos.forEach((p) => formData.append('photos', p));
-      if (audioBlob && audioBlob.size > 0) {
+      if (useTextInput && typedDescription.trim()) {
+        formData.append('description', typedDescription.trim());
+      } else if (audioBlob && audioBlob.size > 0) {
         formData.append('audio', audioBlob, 'voice.webm');
       }
 
@@ -744,12 +748,31 @@ export default function UploadPage() {
                     <h2 className="text-gray-800 text-sm font-bold">{t('ulVoiceTitle')}</h2>
                     <p className="text-gray-500 text-[11px] mt-0.5">{t('ulSubtitle')}</p>
                   </div>
+                  <button
+                    type="button"
+                    onClick={() => setUseTextInput((v) => !v)}
+                    className="flex items-center gap-1.5 text-[11px] font-bold text-primary hover:underline shrink-0"
+                  >
+                    <span className="material-symbols-outlined text-[16px]">
+                      {useTextInput ? 'mic' : 'keyboard'}
+                    </span>
+                    {useTextInput ? 'Rekam suara' : 'Ketik saja'}
+                  </button>
                 </div>
 
-                {!audioBlob ? (
+                {useTextInput ? (
+                  <textarea
+                    value={typedDescription}
+                    onChange={(e) => setTypedDescription(e.target.value)}
+                    placeholder='Contoh: "Ini ukiran kayu jati asli dari Jepara, motifnya tradisional..."'
+                    rows={5}
+                    className="w-full bg-gray-50 border border-gray-200 rounded-lg p-3 text-sm focus:bg-white focus:ring-1 focus:ring-primary focus:border-primary outline-none transition-all text-gray-700 resize-none min-h-[140px]"
+                  />
+                ) : !audioBlob ? (
                   <button
-                    onPointerDown={startRecording}
+                    onPointerDown={(e) => { e.currentTarget.setPointerCapture(e.pointerId); startRecording(); }}
                     onPointerUp={stopRecording}
+                    onPointerCancel={stopRecording}
                     className={`w-full border rounded-lg p-5 flex flex-col items-center justify-center gap-3 cursor-pointer transition-all relative overflow-hidden group select-none touch-manipulation min-h-[140px] ${isRecording
                         ? 'bg-error-container/20 border-error-container'
                         : 'bg-primary-fixed-dim/10 border-primary-fixed hover:bg-primary-fixed-dim/20'
