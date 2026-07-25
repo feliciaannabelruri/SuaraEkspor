@@ -46,6 +46,13 @@ export default function WhatsAppPage() {
   const { isRecording, audioBlob, duration, startRecording, stopRecording, resetRecording } = useVoiceRecorder();
   const pendingVoiceIdRef = useRef<string | null>(null);
 
+  // Konfirmasi deal — dibuat setelah nego harga & ongkir selesai di chat, di sinilah Transaction sungguhan pertama kali dibuat
+  const [dealId, setDealId] = useState<string | null>(null);
+  const [dealForm, setDealForm] = useState({ quantity: '1', agreedPriceUsd: '', buyerAddress: '', shippingCourier: '', shippingCost: '', disbursementMethod: 'bank_transfer' });
+  const [dealBusy, setDealBusy] = useState(false);
+  const [dealError, setDealError] = useState('');
+  const [dealSuccessId, setDealSuccessId] = useState<string | null>(null);
+
   const fetchStatus = useCallback(async () => {
     try {
       const res = await apiClient.get('/whatsapp/status');
@@ -96,6 +103,40 @@ export default function WhatsAppPage() {
       console.error('Gagal menolak pesan WhatsApp:', err);
     } finally {
       setBusyId(null);
+    }
+  }
+
+  function openDealForm(msg: WaMessage) {
+    setDealId(msg.id);
+    setDealForm({ quantity: '1', agreedPriceUsd: '', buyerAddress: '', shippingCourier: '', shippingCost: '', disbursementMethod: 'bank_transfer' });
+    setDealError('');
+  }
+
+  async function handleConfirmDeal(id: string) {
+    const quantity = Number(dealForm.quantity);
+    const agreedPriceUsd = Number(dealForm.agreedPriceUsd);
+    if (!quantity || !agreedPriceUsd) {
+      setDealError('Kuantitas dan harga disepakati harus diisi');
+      return;
+    }
+    setDealBusy(true);
+    setDealError('');
+    try {
+      await apiClient.post(`/whatsapp/messages/${id}/confirm-deal`, {
+        quantity,
+        agreedPriceUsd,
+        buyerAddress: dealForm.buyerAddress || undefined,
+        shippingCourier: dealForm.shippingCourier || undefined,
+        shippingCost: dealForm.shippingCost ? Number(dealForm.shippingCost) : undefined,
+        disbursementMethod: dealForm.disbursementMethod || undefined,
+      });
+      setDealId(null);
+      setDealSuccessId(id);
+      setTimeout(() => setDealSuccessId(null), 4000);
+    } catch (err: any) {
+      setDealError(err.response?.data?.error ?? 'Gagal membuat pesanan. Coba lagi.');
+    } finally {
+      setDealBusy(false);
     }
   }
 
@@ -402,6 +443,72 @@ export default function WhatsAppPage() {
                     {msg.status === 'approved' && msg.sellerReplyText && (
                       <div className="mt-3 bg-gray-50 rounded-lg p-3 text-[11px] text-gray-500">
                         <span className="font-bold uppercase tracking-wider">Kata asli penjual: </span>"{msg.sellerReplyText}"
+                      </div>
+                    )}
+
+                    {/* Konfirmasi Deal — setelah harga & ongkir disepakati di chat */}
+                    {msg.product && (
+                      <div className="mt-3 bg-primary/5 border border-primary/20 rounded-lg p-3">
+                        {dealSuccessId === msg.id ? (
+                          <p className="text-xs font-bold text-primary flex items-center gap-1.5">
+                            <span className="material-symbols-outlined text-[16px]">check_circle</span>
+                            Pesanan dibuat! Cek di halaman Transaksi.
+                          </p>
+                        ) : dealId === msg.id ? (
+                          <div className="space-y-2.5">
+                            <p className="text-[10px] font-bold uppercase tracking-wider text-primary">Konfirmasi Deal (harga & ongkir sudah disepakati di chat)</p>
+                            <div className="grid grid-cols-2 gap-2">
+                              <div>
+                                <label className="text-[9px] font-bold text-gray-500 uppercase block mb-1">Kuantitas</label>
+                                <input type="number" min={1} value={dealForm.quantity} onChange={e => setDealForm({ ...dealForm, quantity: e.target.value })} className="w-full text-xs bg-white border border-gray-200 rounded-md px-2.5 py-1.5 focus:outline-none focus:border-primary" />
+                              </div>
+                              <div>
+                                <label className="text-[9px] font-bold text-gray-500 uppercase block mb-1">Harga Disepakati (USD)</label>
+                                <input type="number" min={0} step="0.01" value={dealForm.agreedPriceUsd} onChange={e => setDealForm({ ...dealForm, agreedPriceUsd: e.target.value })} className="w-full text-xs bg-white border border-gray-200 rounded-md px-2.5 py-1.5 focus:outline-none focus:border-primary" />
+                              </div>
+                            </div>
+                            <div>
+                              <label className="text-[9px] font-bold text-gray-500 uppercase block mb-1">Alamat Pembeli</label>
+                              <textarea value={dealForm.buyerAddress} onChange={e => setDealForm({ ...dealForm, buyerAddress: e.target.value })} rows={2} placeholder="Alamat lengkap dari chat buyer..." className="w-full text-xs bg-white border border-gray-200 rounded-md px-2.5 py-1.5 resize-none focus:outline-none focus:border-primary" />
+                            </div>
+                            <div>
+                              <label className="text-[9px] font-bold text-gray-500 uppercase block mb-1">Cek Ongkir (buka di tab baru, lalu isi hasilnya di bawah)</label>
+                              <div className="flex flex-wrap gap-2">
+                                <a href="https://www.jne.co.id/id/tracking/tarif" target="_blank" rel="noopener noreferrer" className="text-[10px] font-bold text-blue-600 hover:underline">JNE →</a>
+                                <a href="https://www.jet.co.id/tracking" target="_blank" rel="noopener noreferrer" className="text-[10px] font-bold text-blue-600 hover:underline">J&T →</a>
+                                <a href="https://sicepat.com/checkPrice" target="_blank" rel="noopener noreferrer" className="text-[10px] font-bold text-blue-600 hover:underline">SiCepat →</a>
+                              </div>
+                            </div>
+                            <div className="grid grid-cols-2 gap-2">
+                              <div>
+                                <label className="text-[9px] font-bold text-gray-500 uppercase block mb-1">Kurir</label>
+                                <input type="text" value={dealForm.shippingCourier} onChange={e => setDealForm({ ...dealForm, shippingCourier: e.target.value })} placeholder="mis. JNE REG" className="w-full text-xs bg-white border border-gray-200 rounded-md px-2.5 py-1.5 focus:outline-none focus:border-primary" />
+                              </div>
+                              <div>
+                                <label className="text-[9px] font-bold text-gray-500 uppercase block mb-1">Ongkos Kirim (USD)</label>
+                                <input type="number" min={0} step="0.01" value={dealForm.shippingCost} onChange={e => setDealForm({ ...dealForm, shippingCost: e.target.value })} className="w-full text-xs bg-white border border-gray-200 rounded-md px-2.5 py-1.5 focus:outline-none focus:border-primary" />
+                              </div>
+                            </div>
+                            <div>
+                              <label className="text-[9px] font-bold text-gray-500 uppercase block mb-1">Metode Pencairan</label>
+                              <select value={dealForm.disbursementMethod} onChange={e => setDealForm({ ...dealForm, disbursementMethod: e.target.value })} className="w-full text-xs bg-white border border-gray-200 rounded-md px-2.5 py-1.5 focus:outline-none focus:border-primary">
+                                <option value="bank_transfer">Transfer Bank</option>
+                                <option value="minimarket">Ambil di Minimarket</option>
+                              </select>
+                            </div>
+                            {dealError && <p className="text-[11px] text-red-600">{dealError}</p>}
+                            <div className="flex gap-2 pt-1">
+                              <button onClick={() => handleConfirmDeal(msg.id)} disabled={dealBusy} className="bg-primary text-white px-4 py-1.5 rounded-lg text-xs font-semibold disabled:opacity-50">
+                                {dealBusy ? 'Membuat...' : 'Buat Pesanan'}
+                              </button>
+                              <button onClick={() => setDealId(null)} className="text-gray-500 px-3 py-1.5 rounded-lg text-xs font-semibold hover:bg-gray-100">Batal</button>
+                            </div>
+                          </div>
+                        ) : (
+                          <button onClick={() => openDealForm(msg)} className="flex items-center gap-1.5 text-primary hover:underline font-bold text-[13px]">
+                            <span className="material-symbols-outlined text-[16px]">handshake</span> Buat Pesanan (Deal)
+                          </button>
+                        )}
                       </div>
                     )}
                   </div>

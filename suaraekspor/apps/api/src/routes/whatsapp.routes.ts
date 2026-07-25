@@ -326,4 +326,61 @@ router.post('/messages/:id/reject', async (req: AuthRequest, res: Response) => {
   }
 });
 
+// Penjual konfirmasi deal (harga & ongkir sudah disepakati di chat) — di sinilah
+// Transaction sungguhan pertama kali dibuat, bukan dari tombol beli instan di
+// marketplace. Buyer WhatsApp belum tentu punya akun platform (cuma nomor HP),
+// jadi cari/registrasi User buyer dulu — pola yang sama seperti upsert phone
+// di /auth/otp/send.
+router.post('/messages/:id/confirm-deal', async (req: AuthRequest, res: Response) => {
+  const { id } = req.params;
+  const { quantity, agreedPriceUsd, buyerAddress, shippingCourier, shippingCost, disbursementMethod } = req.body;
+
+  if (!quantity || !agreedPriceUsd) {
+    return res.status(400).json({ success: false, error: 'Kuantitas dan harga disepakati diperlukan' });
+  }
+
+  try {
+    const message = await prisma.whatsappMessage.findFirst({ where: { id, sellerId: req.userId! } });
+    if (!message) return res.status(404).json({ success: false, error: 'Pesan tidak ditemukan' });
+    if (!message.productId) return res.status(400).json({ success: false, error: 'Pesan ini tidak terkait produk tertentu' });
+
+    let buyer = await prisma.user.findUnique({ where: { phone: message.buyerPhone } });
+    if (!buyer) {
+      buyer = await prisma.user.create({
+        data: { phone: message.buyerPhone, role: 'buyer', name: message.buyerName ?? undefined },
+      });
+    }
+
+    const transaction = await prisma.transaction.create({
+      data: {
+        productId: message.productId,
+        sellerId: message.sellerId,
+        buyerId: buyer.id,
+        quantity,
+        totalUsd: agreedPriceUsd * quantity,
+        status: 'order_placed',
+        isSimulated: false,
+        buyerAddress,
+        shippingCourier,
+        shippingCost,
+        disbursementMethod,
+      },
+    });
+
+    await prisma.notification.create({
+      data: {
+        userId: message.sellerId,
+        type: 'new_order',
+        title: 'Pesanan baru dibuat dari WhatsApp',
+        message: `Deal dengan ${message.buyerName || message.buyerPhone} senilai $${transaction.totalUsd.toFixed(2)} berhasil dibuat.`,
+      },
+    }).catch((err: Error) => console.error('Gagal membuat notifikasi deal:', err));
+
+    return res.status(201).json({ success: true, data: transaction });
+  } catch (error) {
+    console.error('Error confirming WhatsApp deal:', error);
+    return res.status(500).json({ success: false, error: 'Gagal membuat pesanan' });
+  }
+});
+
 export default router;

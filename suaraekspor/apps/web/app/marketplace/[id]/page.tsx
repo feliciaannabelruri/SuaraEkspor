@@ -60,10 +60,6 @@ export default function BuyerProductPage() {
   const [activeImage, setActiveImage] = useState<string | null>(null);
   const [sending, setSending] = useState(false);
   const [contactError, setContactError] = useState<string | null>(null);
-  const [ordering, setOrdering] = useState(false);
-  const [orderError, setOrderError] = useState<string | null>(null);
-  const [activeTxn, setActiveTxn] = useState<any | null>(null);
-  const [advancingTxn, setAdvancingTxn] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -118,38 +114,6 @@ export default function BuyerProductPage() {
       setContactError('Gagal menghubungi penjual. Silakan coba lagi.');
     } finally {
       setSending(false);
-    }
-  }
-
-  async function handleSimulateOrder() {
-    setOrderError(null);
-    const token = typeof window !== 'undefined' ? localStorage.getItem('se_token') : null;
-    if (!token) {
-      router.push('/login?role=buyer');
-      return;
-    }
-    setOrdering(true);
-    try {
-      const res = await apiClient.post('/transactions', { productId: id, quantity: 1 });
-      setActiveTxn(res.data?.data);
-    } catch (err) {
-      setOrderError('Gagal membuat pesanan. Silakan coba lagi.');
-    } finally {
-      setOrdering(false);
-    }
-  }
-
-  async function handleAdvanceTxn() {
-    if (!activeTxn) return;
-    setAdvancingTxn(true);
-    setOrderError(null);
-    try {
-      const res = await apiClient.patch(`/transactions/${activeTxn.id}/status`, {});
-      setActiveTxn(res.data?.data);
-    } catch (err) {
-      setOrderError('Gagal memperbarui status transaksi.');
-    } finally {
-      setAdvancingTxn(false);
     }
   }
 
@@ -372,123 +336,16 @@ export default function BuyerProductPage() {
               )}
             </div>
 
-            {/* PESANAN & PEMBAYARAN */}
-            <div className="mt-4 bg-background rounded-xl p-4 md:p-6 border border-outline-variant/30">
-              <div className="flex items-center gap-2 mb-3">
-                <ShoppingCart size={18} className="text-primary-container" />
-                <p className="text-[16px] font-bold text-primary-container">Transaksi Buyer</p>
-              </div>
-
-              {orderError && <p className="text-[12px] text-red-500 font-semibold mb-3">{orderError}</p>}
-
-              {!activeTxn ? (
-                <>
-                  <p className="text-[12px] text-gray-600 mb-4 leading-relaxed">
-                    Karena pembeli tidak memiliki dashboard, Anda dapat memproses pembelian, pembayaran escrow, hingga penyelesaian transaksi secara langsung di sini.
-                  </p>
-                  <button
-                    onClick={handleSimulateOrder}
-                    disabled={ordering || product.recommendedPriceUsd == null}
-                    className="w-full bg-primary-container text-white font-bold py-3.5 rounded-xl text-[14px] disabled:opacity-50 transition-all hover:opacity-90 flex items-center justify-center gap-2"
-                  >
-                    {ordering ? 'Memproses...' : 'Beli Sekarang'}
-                  </button>
-                </>
-              ) : (
-                <div className="space-y-4">
-                  {/* Status Steps Tracker */}
-                  <div className="bg-white p-4 rounded-lg border border-gray-100 shadow-sm space-y-3">
-                    <div className="flex justify-between items-center pb-2 border-b border-gray-50">
-                      <span className="text-xs text-gray-500 font-medium">Status Transaksi:</span>
-                      <span className="text-xs font-bold text-secondary-container bg-secondary-container/10 px-2.5 py-1 rounded-full uppercase tracking-wider">
-                        {activeTxn.status === 'order_placed' && 'Pesanan Dibuat'}
-                        {activeTxn.status === 'payment_simulated' && 'Pembayaran Sukses'}
-                        {activeTxn.status === 'escrow_held' && 'Dana di Escrow'}
-                        {activeTxn.status === 'released' && 'Dana Dilepas'}
-                        {activeTxn.status === 'completed' && 'Selesai'}
-                        {activeTxn.status === 'cancelled' && 'Dibatalkan'}
-                      </span>
-                    </div>
-
-                    <div className="space-y-2 pt-1 text-left">
-                      <div className="flex items-center gap-3">
-                        <span className={`w-2.5 h-2.5 rounded-full ${activeTxn.status !== 'cancelled' ? 'bg-primary' : 'bg-gray-300'}`} />
-                        <span className="text-xs text-gray-700">1. Pesanan dibuat oleh buyer</span>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <span className={`w-2.5 h-2.5 rounded-full ${['payment_simulated', 'escrow_held', 'released', 'completed'].includes(activeTxn.status) ? 'bg-primary' : 'bg-gray-300'}`} />
-                        <span className="text-xs text-gray-700">2. Pembayaran diproses</span>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <span className={`w-2.5 h-2.5 rounded-full ${['escrow_held', 'released', 'completed'].includes(activeTxn.status) ? 'bg-primary' : 'bg-gray-300'}`} />
-                        <span className="text-xs text-gray-700">3. Dana aman ditahan Escrow</span>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <span className={`w-2.5 h-2.5 rounded-full ${['released', 'completed'].includes(activeTxn.status) ? 'bg-primary' : 'bg-gray-300'}`} />
-                        <span className="text-xs text-gray-700">4. Dana dilepas ke UMKM</span>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <span className={`w-2.5 h-2.5 rounded-full ${activeTxn.status === 'completed' ? 'bg-primary' : 'bg-gray-300'}`} />
-                        <span className="text-xs text-gray-700">5. Transaksi selesai</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Actions depending on status */}
-                  {activeTxn.status === 'order_placed' && (
-                    <button
-                      onClick={handleAdvanceTxn}
-                      disabled={advancingTxn}
-                      className="w-full bg-primary-container text-white font-bold py-3 rounded-xl text-xs hover:opacity-90 active:scale-95 transition-all flex items-center justify-center gap-1.5 shadow-sm"
-                    >
-                      {advancingTxn ? 'Memproses...' : 'Bayar Sekarang (Buyer)'}
-                    </button>
-                  )}
-
-                  {activeTxn.status === 'payment_simulated' && (
-                    <button
-                      onClick={handleAdvanceTxn}
-                      disabled={advancingTxn}
-                      className="w-full bg-secondary-container text-white font-bold py-3 rounded-xl text-xs hover:opacity-90 active:scale-95 transition-all flex items-center justify-center gap-1.5 shadow-sm"
-                    >
-                      {advancingTxn ? 'Memproses...' : 'Tahan di Escrow'}
-                    </button>
-                  )}
-
-                  {activeTxn.status === 'escrow_held' && (
-                    <button
-                      onClick={handleAdvanceTxn}
-                      disabled={advancingTxn}
-                      className="w-full bg-primary-container text-white font-bold py-3 rounded-xl text-xs hover:opacity-90 active:scale-95 transition-all flex items-center justify-center gap-1.5 shadow-sm"
-                    >
-                      {advancingTxn ? 'Memproses...' : 'Lepas Dana ke UMKM'}
-                    </button>
-                  )}
-
-                  {activeTxn.status === 'released' && (
-                    <button
-                      onClick={handleAdvanceTxn}
-                      disabled={advancingTxn}
-                      className="w-full bg-green-600 text-white font-bold py-3 rounded-xl text-xs hover:bg-green-700 active:scale-95 transition-all flex items-center justify-center gap-1.5 shadow-sm"
-                    >
-                      {advancingTxn ? 'Memproses...' : 'Selesaikan Transaksi'}
-                    </button>
-                  )}
-
-                  {activeTxn.status === 'completed' && (
-                    <div className="bg-green-50 text-green-700 border border-green-200 rounded-xl p-4 text-center">
-                      <p className="text-xs font-bold mb-1">🎉 Transaksi Selesai!</p>
-                      <p className="text-[11px] leading-relaxed">Seluruh alur ekspor & pembayaran escrow berhasil diselesaikan.</p>
-                      <button
-                        onClick={() => setActiveTxn(null)}
-                        className="mt-3 text-[11px] font-bold underline hover:opacity-85"
-                      >
-                        Mulai Transaksi Baru
-                      </button>
-                    </div>
-                  )}
-                </div>
-              )}
+            {/* Setelah nego harga & ongkir selesai lewat chat, penjual akan konfirmasi
+                deal dan pesanan akan muncul otomatis di riwayat transaksi Anda. */}
+            <div className="mt-4 bg-background rounded-xl p-4 border border-outline-variant/30 flex items-start gap-3">
+              <ShoppingCart size={18} className="text-primary-container flex-shrink-0 mt-0.5" />
+              <p className="text-[12px] text-gray-600 leading-relaxed">
+                Sudah deal harga & ongkir dengan penjual di chat? Pesanan akan muncul otomatis setelah dikonfirmasi.{' '}
+                <Link href="/buyer-transactions" className="text-primary-container font-bold hover:underline">
+                  Cek Transaksi Saya →
+                </Link>
+              </p>
             </div>
 
           </div>
