@@ -12,6 +12,7 @@ export default function Navbar() {
     { label: t('nvHome'), href: '/' },
     { label: t('nvHowItWorks'), href: '/cara-kerja' },
     { label: t('nvMarketplace'), href: '/marketplace' },
+    { label: 'Harga', href: '/pricing' },
   ];
   const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
