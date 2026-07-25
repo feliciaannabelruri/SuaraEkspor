@@ -14,6 +14,8 @@ export default function Sidebar() {
   const isDashboard = pathname === '/dashboard' || pathname.startsWith('/product');
   const isUpload = pathname === '/upload';
   const isTransaksi = pathname.startsWith('/transactions');
+  const isLegalDocs = pathname.startsWith('/legal-documents');
+  const isPromoKit = pathname.startsWith('/promo-kit');
   const isPesan = pathname.startsWith('/conversations');
   const isPanduan = pathname === '/panduan';
   const isWhatsapp = pathname === '/whatsapp';
@@ -88,6 +90,14 @@ export default function Sidebar() {
         <Link href="/transactions" className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all group ${isTransaksi ? 'bg-secondary-container text-white font-semibold' : 'text-on-primary/70 hover:bg-white/10'}`}>
           <span className={`material-symbols-outlined text-[20px] ${!isTransaksi ? 'group-hover:text-white' : ''}`} style={{ fontVariationSettings: isTransaksi ? "'FILL' 1" : "'FILL' 0" }}>receipt_long</span>
           <span className="text-sm">{t('sbTransactions')}</span>
+        </Link>
+        <Link href="/legal-documents" className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all group ${isLegalDocs ? 'bg-secondary-container text-white font-semibold' : 'text-on-primary/70 hover:bg-white/10'}`}>
+          <span className={`material-symbols-outlined text-[20px] ${!isLegalDocs ? 'group-hover:text-white' : ''}`} style={{ fontVariationSettings: isLegalDocs ? "'FILL' 1" : "'FILL' 0" }}>gavel</span>
+          <span className="text-sm">Dokumen Legal</span>
+        </Link>
+        <Link href="/promo-kit" className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all group ${isPromoKit ? 'bg-secondary-container text-white font-semibold' : 'text-on-primary/70 hover:bg-white/10'}`}>
+          <span className={`material-symbols-outlined text-[20px] ${!isPromoKit ? 'group-hover:text-white' : ''}`} style={{ fontVariationSettings: isPromoKit ? "'FILL' 1" : "'FILL' 0" }}>campaign</span>
+          <span className="text-sm">Promo Kit</span>
         </Link>
         <Link href="/conversations" className={`flex items-center justify-between px-3 py-2.5 rounded-lg transition-all group ${isPesan ? 'bg-secondary-container text-white font-semibold' : 'text-on-primary/70 hover:bg-white/10'}`}>
           <div className="flex items-center gap-3">
