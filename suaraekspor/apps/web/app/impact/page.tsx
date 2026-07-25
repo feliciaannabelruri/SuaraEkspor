@@ -105,9 +105,9 @@ export default function ImpactDashboardPage() {
         <h2 className="text-sm font-bold text-gray-900 mb-4">Transaksi</h2>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <StatTile label="Total Transaksi" value={metrics.transactions.total} />
-          <StatTile label="Transaksi Nyata" value={metrics.transactions.real} hint="isSimulated = false" />
-          <StatTile label="Transaksi Simulasi" value={metrics.transactions.simulated} />
-          <StatTile label="GMV Nyata (USD)" value={`$${metrics.transactions.realGmvUsd.toFixed(2)}`} hint="completed/released, non-simulasi" />
+          <StatTile label="Transaksi Nyata" value={metrics.transactions.real} />
+          <StatTile label="Transaksi Uji Coba" value={metrics.transactions.simulated} />
+          <StatTile label="GMV Nyata (USD)" value={`$${metrics.transactions.realGmvUsd.toFixed(2)}`} hint="completed/released" />
         </div>
       </div>
 

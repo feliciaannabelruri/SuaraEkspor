@@ -10,6 +10,7 @@ import {
   updateProduct,
   trackProductView,
   generatePromoKit,
+  applyPromoVoiceEdit,
 } from '../controllers/product.controller';
 import multer from 'multer';
 
@@ -27,5 +28,6 @@ router.post('/:id/view', trackProductView);
 router.delete('/:id', authMiddleware, requireRole('seller'), deleteProduct);
 router.patch('/:id', authMiddleware, requireRole('seller'), updateProduct);
 router.post('/:id/promo-kit', authMiddleware, requireRole('seller'), generatePromoKit);
+router.post('/:id/promo-kit/voice-edit', authMiddleware, requireRole('seller'), uploadAudio.single('audio'), applyPromoVoiceEdit);
 
 export default router;

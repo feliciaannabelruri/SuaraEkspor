@@ -79,3 +79,43 @@ Balas dalam format JSON PERSIS:
     'AI promo caption generation',
   );
 }
+
+/**
+ * Terapkan koreksi yang diucapkan penjual lewat voice note ke promo kit yang
+ * sudah ada — pola yang sama seperti koreksi suara di dokumen legal: transkrip
+ * + data saat ini masuk, data yang sudah dikoreksi (skema sama) keluar.
+ */
+export async function applyPromoVoiceCorrection(
+  current: PromoCaptionResult,
+  correctionTranscript: string,
+  sellerLanguage: string,
+): Promise<PromoCaptionResult> {
+  const langName = getLanguageName(sellerLanguage);
+
+  const userPrompt = `Berikut adalah promo kit saat ini dalam format JSON:
+${JSON.stringify(current, null, 2)}
+
+Penjual mengucapkan koreksi berikut lewat voice note:
+"${correctionTranscript}"
+
+Terapkan HANYA koreksi yang diminta, biarkan bagian lain tetap sama persis seperti sebelumnya.
+Balas dengan JSON LENGKAP hasil koreksi, dalam skema yang PERSIS SAMA seperti data asli di atas (caption dalam bahasa ${langName}).`;
+
+  return chatJsonWithValidation(
+    groq,
+    {
+      model: GROQ_MODELS.chatJson,
+      messages: [
+        {
+          role: 'system',
+          content: `Kamu adalah asisten AI yang mengedit promo kit media sosial berdasarkan instruksi suara penjual UMKM. Jawab HANYA dalam format JSON valid, dengan skema yang sama persis seperti data yang diberikan.`,
+        },
+        { role: 'user', content: userPrompt },
+      ],
+      max_tokens: 800,
+      response_format: { type: 'json_object' },
+    },
+    promoCaptionSchema,
+    'AI promo voice correction',
+  );
+}

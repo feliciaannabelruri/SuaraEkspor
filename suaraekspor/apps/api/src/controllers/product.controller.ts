@@ -2,7 +2,8 @@ import { Response } from 'express';
 import { AuthRequest } from '../middleware/auth.middleware';
 import { prisma } from '@suaraekspor/database';
 import { runAIPipeline } from '../services/product.service';
-import { generatePromoCaption } from '@suaraekspor/ai-engine';
+import { generatePromoCaption, applyPromoVoiceCorrection, transcribeAudio } from '@suaraekspor/ai-engine';
+import fs from 'fs';
 
 export async function createProduct(req: AuthRequest, res: Response) {
   const photos = req.files as { [fieldname: string]: Express.Multer.File[] };
@@ -264,9 +265,47 @@ export async function generatePromoKit(req: AuthRequest, res: Response) {
 
     const imageUrl = buildPromoImageUrl(product.photoUrls[0], imageBadgeText);
 
-    return res.json({ success: true, data: { caption, hashtags, imageUrl } });
+    return res.json({ success: true, data: { caption, hashtags, imageBadgeText, imageUrl } });
   } catch (err) {
     console.error('Error generating promo kit:', err);
     return res.status(502).json({ success: false, error: 'Gagal membuat promo kit dengan AI. Coba lagi.' });
+  }
+}
+
+export async function applyPromoVoiceEdit(req: AuthRequest, res: Response) {
+  const { id } = req.params;
+  const file = req.file;
+  if (!file) return res.status(400).json({ success: false, error: 'File audio diperlukan' });
+
+  const product = await prisma.product.findUnique({ where: { id }, select: { sellerId: true, photoUrls: true, seller: { select: { localLanguage: true } } } });
+  if (!product) {
+    fs.unlink(file.path, () => {});
+    return res.status(404).json({ success: false, error: 'Produk tidak ditemukan' });
+  }
+  if (product.sellerId !== req.userId) {
+    fs.unlink(file.path, () => {});
+    return res.status(403).json({ success: false, error: 'Tidak diizinkan mengubah promo kit produk ini' });
+  }
+
+  let current: { caption: string; hashtags: string[]; imageBadgeText: string };
+  try {
+    current = JSON.parse(req.body.current);
+  } catch {
+    fs.unlink(file.path, () => {});
+    return res.status(400).json({ success: false, error: 'Data promo kit saat ini tidak valid' });
+  }
+
+  try {
+    const sttResult = await transcribeAudio(file.path);
+    fs.unlink(file.path, () => {});
+
+    const corrected = await applyPromoVoiceCorrection(current, sttResult.transcript, product.seller.localLanguage || 'id');
+    const imageUrl = product.photoUrls?.[0] ? buildPromoImageUrl(product.photoUrls[0], corrected.imageBadgeText) : '';
+
+    return res.json({ success: true, data: { ...corrected, imageUrl }, transcript: sttResult.transcript });
+  } catch (err) {
+    if (file) fs.unlink(file.path, () => {});
+    console.error('Error applying promo voice edit:', err);
+    return res.status(502).json({ success: false, error: 'Gagal memproses koreksi suara. Coba lagi.' });
   }
 }

@@ -1,10 +1,12 @@
 'use client';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import apiClient from '@/lib/api-client';
+import { useVoiceRecorder } from '@/hooks/useVoiceRecorder';
 
 interface PromoKit {
   caption: string;
   hashtags: string[];
+  imageBadgeText: string;
   imageUrl: string;
 }
 
@@ -14,6 +16,46 @@ export default function PromoKitPanel({ productId }: { productId: string }) {
   const [error, setError] = useState('');
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
   const [shared, setShared] = useState(false);
+  const [lastTranscript, setLastTranscript] = useState<string | null>(null);
+  const [voiceEditing, setVoiceEditing] = useState(false);
+
+  const { isRecording, audioBlob, duration, startRecording, stopRecording, resetRecording } = useVoiceRecorder();
+  const recordingActive = useRef(false);
+
+  useEffect(() => {
+    if (!audioBlob || !recordingActive.current) return;
+    recordingActive.current = false;
+    (async () => {
+      setVoiceEditing(true);
+      try {
+        const formData = new FormData();
+        formData.append('audio', audioBlob, 'correction.webm');
+        formData.append('current', JSON.stringify(promoKit));
+        const res = await apiClient.post(`/products/${productId}/promo-kit/voice-edit`, formData, {
+          headers: { 'Content-Type': 'multipart/form-data' },
+        });
+        if (res.data.success) {
+          setPromoKit(res.data.data);
+          setLastTranscript(res.data.transcript);
+        }
+      } catch (err) {
+        console.error('Gagal menerapkan koreksi suara:', err);
+      } finally {
+        setVoiceEditing(false);
+        resetRecording();
+      }
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [audioBlob]);
+
+  function handleMicClick() {
+    if (isRecording) {
+      stopRecording();
+      return;
+    }
+    recordingActive.current = true;
+    startRecording().catch(() => { recordingActive.current = false; });
+  }
 
   function handleCopy(text: string, code: string) {
     navigator.clipboard.writeText(text);
@@ -130,6 +172,12 @@ export default function PromoKitPanel({ productId }: { productId: string }) {
             ))}
           </div>
         </div>
+        {lastTranscript && (
+          <div className="bg-primary/5 border border-primary/10 rounded-lg px-3 py-2 text-[11px] text-on-surface-variant">
+            <span className="font-bold text-primary">AI menerapkan koreksi:</span> &ldquo;{lastTranscript}&rdquo;
+          </div>
+        )}
+
         <div className="flex flex-wrap gap-2 pt-1">
           <button onClick={handleDownload} className="flex items-center gap-1.5 bg-surface-container-high text-on-surface font-bold text-xs px-3 py-2 rounded-lg hover:bg-outline-variant transition-colors">
             <span className="material-symbols-outlined text-[16px]">download</span> Unduh Gambar
@@ -137,6 +185,20 @@ export default function PromoKitPanel({ productId }: { productId: string }) {
           <button onClick={handleShare} className="flex items-center gap-1.5 bg-primary text-on-primary font-bold text-xs px-3 py-2 rounded-lg hover:opacity-90 transition-all">
             <span className="material-symbols-outlined text-[16px]">{shared ? 'check' : 'share'}</span> {shared ? 'Tersalin' : 'Bagikan'}
           </button>
+          {isRecording ? (
+            <button onClick={handleMicClick} className="flex items-center gap-1.5 text-red-500 font-bold text-xs animate-pulse px-3 py-2">
+              <span className="material-symbols-outlined text-[16px]">stop_circle</span> Stop ({duration}s)
+            </button>
+          ) : (
+            <button
+              onClick={handleMicClick}
+              disabled={voiceEditing}
+              className="flex items-center gap-1.5 text-on-surface-variant hover:text-primary font-bold text-xs px-3 py-2 rounded-lg transition-colors disabled:opacity-50"
+            >
+              <span className="material-symbols-outlined text-[16px]">{voiceEditing ? 'progress_activity' : 'mic'}</span>
+              {voiceEditing ? 'Memproses suara...' : 'Edit dengan Suara'}
+            </button>
+          )}
           <button
             onClick={handleGenerate}
             disabled={generating}
@@ -145,6 +207,7 @@ export default function PromoKitPanel({ productId }: { productId: string }) {
             <span className="material-symbols-outlined text-[16px]">refresh</span> {generating ? 'Memproses...' : 'Buat Ulang'}
           </button>
         </div>
+        <p className="text-[10px] text-on-surface-variant">Ucapkan koreksi yang ingin diterapkan, mis. &ldquo;buat lebih singkat&rdquo; atau &ldquo;ganti nama tokonya&rdquo;.</p>
       </div>
     </div>
   );

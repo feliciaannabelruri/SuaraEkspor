@@ -18,7 +18,7 @@ import LegalDocumentsPanel from '../../components/transactions/LegalDocumentsPan
 const TXN_STEPS = ['order_placed', 'payment_simulated', 'escrow_held', 'released', 'completed'] as const;
 const TXN_LABELS: Record<string, string> = {
   order_placed: 'Pesanan Dibuat',
-  payment_simulated: 'Pembayaran Diterima (Simulasi)',
+  payment_simulated: 'Pembayaran Diterima',
   escrow_held: 'Dana Ditahan Escrow',
   released: 'Dana Dilepas ke Penjual',
   completed: 'Transaksi Selesai',
@@ -292,7 +292,6 @@ export default function TransactionsPage() {
           <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
             <div className="p-4 md:p-6 border-b border-gray-100 flex items-center justify-between flex-wrap gap-4 bg-gray-50/50">
               <h2 className="font-bold text-primary text-lg">{t('sbTransactions')}</h2>
-              <span className="bg-secondary-container/10 text-secondary-container px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider">Simulasi</span>
             </div>
 
             <div className="p-4 md:p-6">

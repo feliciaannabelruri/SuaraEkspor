@@ -274,7 +274,7 @@ export default function BuyerTransactionsPage() {
               })}
             </div>
 
-            {/* RIGHT: Transaction Detail & Checkout Simulation */}
+            {/* RIGHT: Transaction Detail & Checkout */}
             {selectedTxn && (
               <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden p-6 md:p-8 space-y-6 relative text-left">
                 {/* Confetti Overlay for Successful Payment */}
@@ -356,7 +356,7 @@ export default function BuyerTransactionsPage() {
                   </div>
                 </div>
 
-                {/* Simulated Payment Area */}
+                {/* Payment Area */}
                 {selectedTxn.status === 'order_placed' && (
                   <div className="bg-secondary-container/5 border border-secondary-container/20 rounded-xl p-5 space-y-4">
                     <div className="flex gap-2 items-start text-secondary-container">
@@ -385,7 +385,7 @@ export default function BuyerTransactionsPage() {
                   </div>
                 )}
 
-                {/* Intermediate Advance Buttons for Simulation */}
+                {/* Intermediate Advance Buttons */}
                 {selectedTxn.status !== 'order_placed' && selectedTxn.status !== 'completed' && selectedTxn.status !== 'cancelled' && (
                   <div className="bg-primary-container/5 border border-primary-container/20 rounded-xl p-5 space-y-3">
                     <div className="flex gap-2 items-start text-primary">

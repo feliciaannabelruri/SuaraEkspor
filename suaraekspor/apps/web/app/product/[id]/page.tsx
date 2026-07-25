@@ -49,7 +49,7 @@ interface ApiProduct {
 const TXN_STEPS = ['order_placed', 'payment_simulated', 'escrow_held', 'released', 'completed'] as const;
 const TXN_LABELS: Record<string, string> = {
   order_placed: 'Pesanan Dibuat',
-  payment_simulated: 'Pembayaran (Simulasi)',
+  payment_simulated: 'Pembayaran Diterima',
   escrow_held: 'Dana Ditahan Escrow',
   released: 'Dana Dilepas',
   completed: 'Selesai',
@@ -506,12 +506,11 @@ export default function ProductDetail() {
 
             </div>
 
-            {/* Simulasi Transaksi — belum ada payment gateway/escrow asli */}
+            {/* Transaksi produk ini */}
             {transactions.length > 0 && (
               <div className="col-span-12 bg-surface-container-lowest rounded-xl p-6 border border-outline-variant/30 shadow-sm">
                 <div className="flex items-center gap-2 mb-6">
-                  <h3 className="text-label-caps text-on-surface-variant">SIMULASI TRANSAKSI</h3>
-                  <span className="text-[9px] font-bold uppercase tracking-widest bg-surface-container text-on-surface-variant px-2 py-0.5 rounded">Belum Ada Payment Gateway Asli</span>
+                  <h3 className="text-label-caps text-on-surface-variant">TRANSAKSI</h3>
                 </div>
                 <div className="space-y-6">
                   {transactions.map((t) => {

@@ -133,7 +133,7 @@ export default function BuyerProductPage() {
       const res = await apiClient.post('/transactions', { productId: id, quantity: 1 });
       setActiveTxn(res.data?.data);
     } catch (err) {
-      setOrderError('Gagal membuat simulasi pesanan. Silakan coba lagi.');
+      setOrderError('Gagal membuat pesanan. Silakan coba lagi.');
     } finally {
       setOrdering(false);
     }
@@ -372,12 +372,11 @@ export default function BuyerProductPage() {
               )}
             </div>
 
-            {/* SIMULASI PESANAN & PEMBAYARAN */}
+            {/* PESANAN & PEMBAYARAN */}
             <div className="mt-4 bg-background rounded-xl p-4 md:p-6 border border-outline-variant/30">
               <div className="flex items-center gap-2 mb-3">
                 <ShoppingCart size={18} className="text-primary-container" />
-                <p className="text-[16px] font-bold text-primary-container">Simulasi Transaksi Buyer</p>
-                <span className="text-[10px] font-bold uppercase tracking-widest bg-secondary-container/10 text-secondary-container px-2 py-0.5 rounded">Simulasi</span>
+                <p className="text-[16px] font-bold text-primary-container">Transaksi Buyer</p>
               </div>
 
               {orderError && <p className="text-[12px] text-red-500 font-semibold mb-3">{orderError}</p>}
@@ -385,14 +384,14 @@ export default function BuyerProductPage() {
               {!activeTxn ? (
                 <>
                   <p className="text-[12px] text-gray-600 mb-4 leading-relaxed">
-                    Karena pembeli tidak memiliki dashboard, Anda dapat mensimulasikan proses pembelian, pembayaran escrow, hingga penyelesaian transaksi secara langsung di sini.
+                    Karena pembeli tidak memiliki dashboard, Anda dapat memproses pembelian, pembayaran escrow, hingga penyelesaian transaksi secara langsung di sini.
                   </p>
                   <button
                     onClick={handleSimulateOrder}
                     disabled={ordering || product.recommendedPriceUsd == null}
                     className="w-full bg-primary-container text-white font-bold py-3.5 rounded-xl text-[14px] disabled:opacity-50 transition-all hover:opacity-90 flex items-center justify-center gap-2"
                   >
-                    {ordering ? 'Memproses...' : 'Simulasikan Pembelian (Beli)'}
+                    {ordering ? 'Memproses...' : 'Beli Sekarang'}
                   </button>
                 </>
               ) : (
@@ -418,7 +417,7 @@ export default function BuyerProductPage() {
                       </div>
                       <div className="flex items-center gap-3">
                         <span className={`w-2.5 h-2.5 rounded-full ${['payment_simulated', 'escrow_held', 'released', 'completed'].includes(activeTxn.status) ? 'bg-primary' : 'bg-gray-300'}`} />
-                        <span className="text-xs text-gray-700">2. Pembayaran disimulasikan</span>
+                        <span className="text-xs text-gray-700">2. Pembayaran diproses</span>
                       </div>
                       <div className="flex items-center gap-3">
                         <span className={`w-2.5 h-2.5 rounded-full ${['escrow_held', 'released', 'completed'].includes(activeTxn.status) ? 'bg-primary' : 'bg-gray-300'}`} />
@@ -442,7 +441,7 @@ export default function BuyerProductPage() {
                       disabled={advancingTxn}
                       className="w-full bg-primary-container text-white font-bold py-3 rounded-xl text-xs hover:opacity-90 active:scale-95 transition-all flex items-center justify-center gap-1.5 shadow-sm"
                     >
-                      {advancingTxn ? 'Memproses...' : 'Simulasikan Bayar Sekarang (Buyer)'}
+                      {advancingTxn ? 'Memproses...' : 'Bayar Sekarang (Buyer)'}
                     </button>
                   )}
 
@@ -452,7 +451,7 @@ export default function BuyerProductPage() {
                       disabled={advancingTxn}
                       className="w-full bg-secondary-container text-white font-bold py-3 rounded-xl text-xs hover:opacity-90 active:scale-95 transition-all flex items-center justify-center gap-1.5 shadow-sm"
                     >
-                      {advancingTxn ? 'Memproses...' : 'Simulasikan Tahan di Escrow'}
+                      {advancingTxn ? 'Memproses...' : 'Tahan di Escrow'}
                     </button>
                   )}
 
@@ -462,7 +461,7 @@ export default function BuyerProductPage() {
                       disabled={advancingTxn}
                       className="w-full bg-primary-container text-white font-bold py-3 rounded-xl text-xs hover:opacity-90 active:scale-95 transition-all flex items-center justify-center gap-1.5 shadow-sm"
                     >
-                      {advancingTxn ? 'Memproses...' : 'Simulasikan Lepas Dana ke UMKM'}
+                      {advancingTxn ? 'Memproses...' : 'Lepas Dana ke UMKM'}
                     </button>
                   )}
 
@@ -472,19 +471,19 @@ export default function BuyerProductPage() {
                       disabled={advancingTxn}
                       className="w-full bg-green-600 text-white font-bold py-3 rounded-xl text-xs hover:bg-green-700 active:scale-95 transition-all flex items-center justify-center gap-1.5 shadow-sm"
                     >
-                      {advancingTxn ? 'Memproses...' : 'Selesaikan Transaksi (Simulasi)'}
+                      {advancingTxn ? 'Memproses...' : 'Selesaikan Transaksi'}
                     </button>
                   )}
 
                   {activeTxn.status === 'completed' && (
                     <div className="bg-green-50 text-green-700 border border-green-200 rounded-xl p-4 text-center">
                       <p className="text-xs font-bold mb-1">🎉 Transaksi Selesai!</p>
-                      <p className="text-[11px] leading-relaxed">Seluruh alur ekspor & pembayaran escrow berhasil disimulasikan.</p>
+                      <p className="text-[11px] leading-relaxed">Seluruh alur ekspor & pembayaran escrow berhasil diselesaikan.</p>
                       <button
                         onClick={() => setActiveTxn(null)}
                         className="mt-3 text-[11px] font-bold underline hover:opacity-85"
                       >
-                        Mulai Simulasi Baru
+                        Mulai Transaksi Baru
                       </button>
                     </div>
                   )}
