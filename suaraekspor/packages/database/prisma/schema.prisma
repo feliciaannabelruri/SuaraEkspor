@@ -104,6 +104,41 @@ model Transaction {
   product        Product           @relation(fields: [productId], references: [id])
   seller         User              @relation("SellerTransactions", fields: [sellerId], references: [id])
   buyer          User              @relation("BuyerTransactions", fields: [buyerId], references: [id])
+  legalDocuments LegalDocument[]
+}
+
+// ─── Legal Export Documents ──────────────────────────────────────────────
+// Invoice / packing list / certificate of origin per transaction. `data` and
+// `exportContext` are JSON rather than dedicated columns because the three
+// doc types have different field sets and this is a UMKM-friendly best-effort
+// generator, not a rigid customs system — the per-type Zod schema in
+// packages/ai-engine/src/legal-docs is the real source of truth for shape.
+model LegalDocument {
+  id            String         @id @default(cuid())
+  transactionId String
+  type          LegalDocType
+  status        LegalDocStatus @default(draft)
+  data          Json
+  exportContext Json?
+  pdfUrl        String?
+  aiNotes       String?        @db.Text
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  transaction   Transaction    @relation(fields: [transactionId], references: [id])
+
+  @@unique([transactionId, type])
+}
+
+enum LegalDocType {
+  commercial_invoice
+  packing_list
+  certificate_of_origin
+}
+
+enum LegalDocStatus {
+  draft
+  finalized
 }
 
 enum TransactionStatus {

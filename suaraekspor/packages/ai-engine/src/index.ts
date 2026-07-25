@@ -4,3 +4,6 @@ export { generateMultilingualListing } from './llm/listing.service';
 export { recommendExportPrice } from './llm/pricing.service';
 export { handleBuyerMessage, handleWhatsappMessage, translateText, translateDictionary } from './llm/communication.service';
 export { generateVoiceNotification } from './tts/voice-notify.service';
+export { generateInvoiceData, generatePackingListData, generateCertOriginData } from './legal-docs/generate-document.service';
+export { applyVoiceCorrection } from './legal-docs/apply-voice-correction.service';
+export type { LegalDocGenInput } from './legal-docs/generate-document.service';

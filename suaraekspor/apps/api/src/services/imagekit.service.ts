@@ -29,3 +29,15 @@ export async function uploadAudioFile(localFilePath: string): Promise<string> {
   });
   return result.url;
 }
+
+// PDF is rendered in-memory (pdf-lib), so this takes a Buffer directly
+// instead of a local file path — no temp file to clean up.
+export async function uploadDocumentPdf(buffer: Buffer, fileName: string): Promise<string> {
+  const result = await imagekit.upload({
+    file: buffer,
+    fileName,
+    folder: '/suaraekspor/legal-documents',
+    useUniqueFileName: true,
+  });
+  return result.url;
+}

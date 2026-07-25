@@ -12,6 +12,7 @@ import { TRANSLATIONS } from '@/lib/translations';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useMiddleman } from '../../app/context/middleman-context';
 import { Trash, CheckCircle, TrendingUp, Calendar, ShoppingBag } from 'lucide-react';
+import LegalDocumentsPanel from '../../components/transactions/LegalDocumentsPanel';
 
 
 const TXN_STEPS = ['order_placed', 'payment_simulated', 'escrow_held', 'released', 'completed'] as const;
@@ -42,6 +43,7 @@ export default function TransactionsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [advancingId, setAdvancingId] = useState<string | null>(null);
+  const [expandedLegalId, setExpandedLegalId] = useState<string | null>(null);
 
   // Filter & Delete States
   const [timeFilter, setTimeFilter] = useState<'all' | 'week' | 'month' | 'year'>('all');
@@ -376,7 +378,7 @@ export default function TransactionsPage() {
                                 )}
                               </div>
                               
-                              <div className="mt-6 md:mt-0">
+                              <div className="mt-6 md:mt-0 space-y-2">
                                 {!isFinal && (
                                   <button
                                     onClick={() => handleAdvanceTransaction(t.id)}
@@ -386,6 +388,13 @@ export default function TransactionsPage() {
                                     {advancingId === t.id ? 'Memproses...' : `Lanjut ke: ${TXN_LABELS[TXN_STEPS[stepIdx + 1]] || '-'}`}
                                   </button>
                                 )}
+                                <button
+                                  onClick={() => setExpandedLegalId(expandedLegalId === t.id ? null : t.id)}
+                                  className="w-full border border-gray-200 text-gray-700 font-bold text-xs py-2.5 rounded-lg hover:border-primary hover:text-primary transition-all flex items-center justify-center gap-1.5"
+                                >
+                                  <span className="material-symbols-outlined text-[16px]">gavel</span>
+                                  {expandedLegalId === t.id ? 'Tutup Dokumen Legal' : 'Dokumen Legal'}
+                                </button>
                               </div>
                             </div>
                           </div>
@@ -398,6 +407,12 @@ export default function TransactionsPage() {
                                 <div className={`h-1.5 flex-1 rounded-full ${i <= stepIdx ? 'bg-primary' : 'bg-gray-300'}`} />
                               </div>
                             ))}
+                          </div>
+                        )}
+
+                        {expandedLegalId === t.id && (
+                          <div className="border-t border-gray-100 px-4 md:px-5 py-4 bg-white">
+                            <LegalDocumentsPanel transactionId={t.id} />
                           </div>
                         )}
                       </div>
