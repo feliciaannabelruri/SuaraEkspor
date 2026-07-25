@@ -57,7 +57,10 @@ Penting: beri nama produk yang SPESIFIK (bukan generic seperti "kerajinan tangan
           content: [{ type: 'text', text: userPrompt }, ...imageContent],
         },
       ],
-      max_tokens: 1200,
+      // qwen/qwen3.6-27b (Groq's vision preview model) occasionally rejects its
+      // own output as invalid JSON under tight token budgets — extra headroom
+      // reduces how often that happens.
+      max_tokens: 2000,
       response_format: { type: 'json_object' },
     },
     visionResultSchema,

@@ -13,7 +13,7 @@ export async function chatJsonWithValidation<T>(
 ): Promise<T> {
   let lastError: unknown = null;
 
-  for (let attempt = 0; attempt < 2; attempt++) {
+  for (let attempt = 0; attempt < 3; attempt++) {
     const messages =
       attempt === 0
         ? params.messages
@@ -27,7 +27,12 @@ export async function chatJsonWithValidation<T>(
       );
       content = response.choices[0]?.message?.content;
     } catch (err) {
-      throw new Error(`${stageName} gagal: ${err instanceof Error ? err.message : String(err)}`);
+      // Groq itself can reject a response as invalid JSON before it reaches us
+      // (e.g. "400 Failed to validate JSON") — that's exactly the transient
+      // failure the retry-with-stricter-prompt below exists for, so record it
+      // and retry instead of throwing immediately on attempt 1.
+      lastError = err;
+      continue;
     }
 
     if (!content) {
