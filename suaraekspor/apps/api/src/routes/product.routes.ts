@@ -9,6 +9,7 @@ import {
   deleteProduct,
   updateProduct,
   trackProductView,
+  generatePromoKit,
 } from '../controllers/product.controller';
 import multer from 'multer';
 
@@ -25,5 +26,6 @@ router.get('/:id/status', getProductStatus);
 router.post('/:id/view', trackProductView);
 router.delete('/:id', authMiddleware, requireRole('seller'), deleteProduct);
 router.patch('/:id', authMiddleware, requireRole('seller'), updateProduct);
+router.post('/:id/promo-kit', authMiddleware, requireRole('seller'), generatePromoKit);
 
 export default router;

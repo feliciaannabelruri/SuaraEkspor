@@ -2,6 +2,7 @@ import { Response } from 'express';
 import { AuthRequest } from '../middleware/auth.middleware';
 import { prisma } from '@suaraekspor/database';
 import { runAIPipeline } from '../services/product.service';
+import { generatePromoCaption } from '@suaraekspor/ai-engine';
 
 export async function createProduct(req: AuthRequest, res: Response) {
   const photos = req.files as { [fieldname: string]: Express.Multer.File[] };
@@ -221,5 +222,51 @@ export async function updateProduct(req: AuthRequest, res: Response) {
   } catch (err: any) {
     console.error('[Update Product Error]', err);
     return res.status(500).json({ success: false, error: 'Gagal mengubah produk' });
+  }
+}
+
+// ImageKit renders this transformation on the fly from the existing product
+// photo URL — no server-side image processing or extra upload needed.
+function buildPromoImageUrl(photoUrl: string, badgeText: string): string {
+  const tr = `tr=w-1080,h-1080,cm-pad_resize,bg-FFFFFF,l-text,i-${encodeURIComponent(badgeText)},fs-48,co-FFFFFF,bg-01261FCC,pa-20,l-end`;
+  return `${photoUrl}${photoUrl.includes('?') ? '&' : '?'}${tr}`;
+}
+
+export async function generatePromoKit(req: AuthRequest, res: Response) {
+  const { id } = req.params;
+
+  const product = await prisma.product.findUnique({
+    where: { id },
+    include: {
+      listings: { where: { languageCode: 'id' }, take: 1 },
+      seller: { select: { businessName: true, localLanguage: true } },
+    },
+  });
+
+  if (!product) return res.status(404).json({ success: false, error: 'Produk tidak ditemukan' });
+  if (product.sellerId !== req.userId) {
+    return res.status(403).json({ success: false, error: 'Tidak diizinkan membuat promo kit untuk produk ini' });
+  }
+  if (!product.photoUrls?.[0]) {
+    return res.status(400).json({ success: false, error: 'Produk belum punya foto' });
+  }
+
+  const listing = product.listings[0];
+
+  try {
+    const { caption, hashtags, imageBadgeText } = await generatePromoCaption({
+      productTitle: listing?.title || product.category || 'Produk UMKM',
+      productDescription: listing?.description || '',
+      category: product.category || 'lainnya',
+      sellerLanguage: product.seller.localLanguage || 'id',
+      businessName: product.seller.businessName || undefined,
+    });
+
+    const imageUrl = buildPromoImageUrl(product.photoUrls[0], imageBadgeText);
+
+    return res.json({ success: true, data: { caption, hashtags, imageUrl } });
+  } catch (err) {
+    console.error('Error generating promo kit:', err);
+    return res.status(502).json({ success: false, error: 'Gagal membuat promo kit dengan AI. Coba lagi.' });
   }
 }

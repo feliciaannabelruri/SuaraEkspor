@@ -7,3 +7,5 @@ export { generateVoiceNotification } from './tts/voice-notify.service';
 export { generateInvoiceData, generatePackingListData, generateCertOriginData } from './legal-docs/generate-document.service';
 export { applyVoiceCorrection } from './legal-docs/apply-voice-correction.service';
 export type { LegalDocGenInput } from './legal-docs/generate-document.service';
+export { generatePromoCaption } from './marketing/promo-caption.service';
+export type { PromoCaptionResult, PromoCaptionInput } from './marketing/promo-caption.service';
